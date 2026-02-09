@@ -14,6 +14,7 @@ AI-driven development templates for Claude Code projects. Copy these into your p
 .github/
   pull_request_template.md
   workflows/
+    ci.yml.template             # KMP CI (Android + iOS build & test)
     ai-ops-daily.yml.template   # Daily analysis pipeline (reviews, crashes, metrics)
 CLAUDE.md.template  # Base CLAUDE.md with behavior rules and AI-driven dev flow
 ```

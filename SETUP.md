@@ -9,10 +9,12 @@ AI-driven development templates for Claude Code projects.
   commands/
     review.md          ← /review skill (mobile code review with checklist)
     pr.md              ← /pr skill (PR creation with template)
+    tech-debt.md       ← /tech-debt skill (codebase scan + auto Issue creation)
   settings.json        ← Claude Code permission presets
 .github/
   pull_request_template.md  ← PR template
   workflows/
+    ci.yml.template            ← KMP CI pipeline (Android + iOS build & test)
     ai-ops-daily.yml.template  ← Daily AI analysis pipeline (GitHub Actions)
 CLAUDE.md.template     ← Base CLAUDE.md for AI-driven projects
 ```
@@ -40,6 +42,7 @@ cp ai-dev-templates/CLAUDE.md.template your-project/CLAUDE.md
 | `.claude/settings.json` | Auto-allow common CLI commands | Add project-specific commands |
 | `.github/pull_request_template.md` | PR template | Add project-specific sections |
 | `CLAUDE.md.template` | AI behavior rules + architecture guide | **Must customize per project** |
+| `ci.yml.template` | KMP CI (Android build + iOS build + shared tests) | Uncomment and adjust module names |
 | `ai-ops-daily.yml.template` | Automated data collection + AI analysis | Configure API keys and scripts |
 
 ### Included Workflows

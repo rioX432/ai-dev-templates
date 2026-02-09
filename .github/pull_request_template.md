@@ -9,11 +9,15 @@
 
 ## Test Plan
 - [ ] Unit tests added/updated
-- [ ] Manual testing completed
-- [ ] Edge cases verified
+- [ ] UI tested on iOS simulator
+- [ ] UI tested on Android emulator
+- [ ] Dark mode verified
+- [ ] Accessibility verified
 
 ## Checklist
 - [ ] CLAUDE.md rules followed
-- [ ] No hardcoded strings
+- [ ] No hardcoded strings (all externalized)
+- [ ] No `!!` or force unwrap
+- [ ] No `GlobalScope`
 - [ ] Error handling complete
 -->

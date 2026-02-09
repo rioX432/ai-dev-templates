@@ -42,6 +42,16 @@ src/
 |---|---|
 | ... | ... |
 
+## Detailed Guides (External Files)
+
+<!-- Split detailed docs into separate files to keep CLAUDE.md concise -->
+
+| File | Contents |
+|---|---|
+| `docs/claude/coding-conventions.md` | Coding conventions (Kotlin / Swift / general) |
+| `docs/claude/design-decisions.md` | Design decisions and guidelines |
+| `docs/claude/review_points.md` | Review insights extracted from past reviews (reference during dev) |
+
 ## Coding Conventions
 
 - Code comments in English
@@ -51,11 +61,22 @@ src/
 
 ## AI-Driven Development
 
-### Development Flow
+### Development Flow (Issue-Driven)
 
-```
-GitHub Issue → Claude Code implements → PR + tests → Human review → Merge
-```
+**All work is driven by GitHub Issues.** Pick the lowest-numbered unblocked issue and work through it.
+
+1. `gh issue list` to find unstarted issues
+2. Read the issue, understand requirements, plan implementation
+3. Confirm design/plan with **Codex MCP** before starting
+4. Implement according to plan
+5. Verify build and lint pass
+6. Run `/review` for self-review
+7. Fix any review findings; extract reusable insights into `docs/claude/review_points.md`
+8. Create PR (`Closes #N` in body)
+
+### review_points.md Workflow
+- Don't copy review comments verbatim — **extract reusable prevention insights**
+- Reference `review_points.md` during design and implementation to avoid repeat mistakes
 
 ### Automated Operations (post-release)
 

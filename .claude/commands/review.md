@@ -43,12 +43,15 @@ Review the current branch's changes against the base branch.
 - [ ] No platform-specific imports in `commonMain`
 
 ### Phase 5: Data & Performance
+- [ ] Room entities/DAOs follow schema conventions
 - [ ] No memory leaks (long-lived references to short-lived objects)
-- [ ] No heavy work on main/UI thread
+- [ ] No heavy work on main/UI thread (no ANR risk)
 - [ ] No unnecessary network calls or redundant API requests
+- [ ] Battery: no unnecessary background work
+- [ ] Images cached appropriately (Coil)
 - [ ] Caching used where appropriate
 
-### Phase 6: Security (OWASP)
+### Phase 6: Security (OWASP MASVS)
 - [ ] No hardcoded secrets, passwords, API keys
 - [ ] No sensitive data in logs
 - [ ] User input sanitized
@@ -57,9 +60,10 @@ Review the current branch's changes against the base branch.
 ### Phase 7: Quality
 - [ ] Error handling covers all failure cases
 - [ ] UI strings externalized (no hardcoded text)
+- [ ] No magic numbers (use constants or design tokens)
 - [ ] Naming is clear and consistent
 - [ ] Tests added/updated for changed code
-- [ ] Dark mode verified (if applicable)
+- [ ] Dark mode: no pure black (#000000), no pure white (#FFFFFF)
 - [ ] Accessibility: Dynamic Type / VoiceOver / TalkBack / contrast
 
 ## Output Format

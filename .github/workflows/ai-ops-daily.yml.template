@@ -1,0 +1,56 @@
+# AI Operations - Daily Analysis Pipeline
+# Copy this template and customize for your project
+#
+# Prerequisites:
+# - ANTHROPIC_API_KEY secret
+# - SLACK_WEBHOOK_URL secret (optional)
+# - App Store Connect API key (for iOS apps)
+# - Google Play API credentials (for Android apps)
+
+name: AI Ops - Daily Analysis
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 10:00 JST daily
+  workflow_dispatch:
+
+jobs:
+  collect-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # --- Customize below for your project ---
+
+      # - name: Collect App Store reviews
+      #   run: python tools/ops/collect_reviews.py --platform ios
+      #   env:
+      #     APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+
+      # - name: Collect Google Play reviews
+      #   run: python tools/ops/collect_reviews.py --platform android
+      #   env:
+      #     GOOGLE_PLAY_KEY: ${{ secrets.GOOGLE_PLAY_KEY }}
+
+      # - name: Collect Crashlytics data
+      #   run: python tools/ops/collect_crashes.py
+
+      # - name: AI Analysis (Claude)
+      #   run: python tools/ops/analyze.py
+      #   env:
+      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # - name: Create GitHub Issues for findings
+      #   run: python tools/ops/create_issues.py
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Send Slack report
+      #   run: python tools/ops/notify_slack.py
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

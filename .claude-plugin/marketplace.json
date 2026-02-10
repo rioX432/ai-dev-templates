@@ -1,0 +1,17 @@
+{
+  "name": "rioX432/ai-dev-templates",
+  "owner": {
+    "name": "rio"
+  },
+  "metadata": {
+    "description": "AI-driven development workflow plugins"
+  },
+  "plugins": [
+    {
+      "name": "ai-dev",
+      "source": ".",
+      "description": "Autonomous issue fixing, code review, PR creation, tech debt scanning, and KPI monitoring",
+      "version": "1.0.0"
+    }
+  ]
+}

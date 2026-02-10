@@ -1,0 +1,37 @@
+# {PROJECT_NAME}
+
+## Project Overview
+<!-- Brief description of the project -->
+
+## Rules
+
+@rules/behavior.md
+@rules/coding-conventions.md
+@rules/ai-ops.md
+
+## Architecture
+<!-- Define project structure -->
+
+```
+src/
+  ...
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| ... | ... |
+
+## Detailed Guides (External Files)
+
+| File | Contents |
+|---|---|
+| `docs/claude/coding-conventions.md` | Coding conventions (Kotlin / Swift / general) |
+| `docs/claude/design-decisions.md` | Design decisions and guidelines |
+| `docs/claude/review_points.md` | Review insights extracted from past reviews |
+
+## Common Mistakes (Don't Do)
+
+<!-- Add project-specific pitfalls below -->
+- ...

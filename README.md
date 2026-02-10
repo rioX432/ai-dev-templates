@@ -1,47 +1,84 @@
-# ai-dev-templates
+# ai-dev
 
-AI-driven development templates for Claude Code projects. Copy these into your project to get a standardized setup for code review, PR creation, tech debt scanning, and automated ops.
+Claude Code plugin for AI-driven development workflows. Provides autonomous issue resolution, code review, PR creation, tech debt scanning, and KPI monitoring.
 
-## Contents
-
-```
-.claude/
-  commands/
-    review.md       # /review — multi-phase code review (Architecture → Mobile → KMP → Perf → Security)
-    pr.md           # /pr — PR creation with template and issue linking
-    tech-debt.md    # /tech-debt — codebase scan with auto GitHub Issue creation
-  settings.json     # Permission presets for common CLI tools
-.github/
-  pull_request_template.md
-  workflows/
-    ci.yml.template             # KMP CI (Android + iOS build & test)
-    ai-ops-daily.yml.template   # Daily analysis pipeline (reviews, crashes, metrics)
-CLAUDE.md.template  # Base CLAUDE.md with behavior rules and AI-driven dev flow
-```
-
-## Usage
+## Install
 
 ```bash
-# Copy to your project
-cp -r .claude/ /path/to/your-project/.claude/
-cp -r .github/ /path/to/your-project/.github/
-cp CLAUDE.md.template /path/to/your-project/CLAUDE.md
-
-# Then customize:
-# 1. CLAUDE.md — fill in project name, architecture, tech stack
-# 2. .github/workflows/*.template — rename to .yml and configure secrets
-# 3. .claude/settings.json — add project-specific allowed commands
+claude plugin install /path/to/ai-dev-templates --scope user
 ```
 
-See [SETUP.md](SETUP.md) for detailed instructions.
+Or test locally:
+
+```bash
+claude --plugin-dir /path/to/ai-dev-templates
+```
 
 ## Skills
 
-| Skill | What it does |
+| Skill | Description |
 |---|---|
-| `/review` | Runs a multi-phase code review checklist (Compose, SwiftUI, KMP, security, perf) with Gemini cross-review |
-| `/pr` | Creates a PR from current branch using the project's PR template |
-| `/tech-debt` | Scans for code smells, architecture issues, perf problems, and creates GitHub Issues for high-severity findings |
+| `/ai-dev:dev {N}` | Autonomous end-to-end: investigate → plan → implement → test → review → PR |
+| `/ai-dev:review` | Multi-phase code review (Architecture → Mobile → KMP → Perf → Security → Quality) with Gemini cross-review |
+| `/ai-dev:pr` | PR creation using project template with issue linking |
+| `/ai-dev:tech-debt` | Codebase scan for technical debt, auto-creates GitHub Issues for high-severity findings |
+| `/ai-dev:monitor` | KPI monitoring: crash rates, store reviews, metrics → issue proposals |
+| `/ai-dev:init-project {path}` | Initialize a project with templates (CLAUDE.md, settings, CI, workflows) |
+
+## Agents
+
+| Agent | Role |
+|---|---|
+| `security-reviewer` | OWASP MASVS vulnerability scanner |
+| `test-writer` | Unit test generation for changed code |
+
+## Hooks
+
+| Event | Action |
+|---|---|
+| `PostToolUse` (Write/Edit) | Auto-lint saved files (ktlint, swiftformat, eslint, ruff, etc.) |
+| `PreToolUse` (Bash) | Block dangerous commands (force push to main, rm -rf /, etc.) |
+
+## Workflow: dev
+
+```
+/ai-dev:dev 42
+    ├─ Phase 1: Investigate (gh issue view, code exploration)
+    ├─ Phase 2: Plan (present to user for approval)
+    ├─ Phase 3: Implement (branch, code, auto-lint)
+    ├─ Phase 4: Test (test-writer agent, build, run)
+    ├─ Phase 5: Self-review (checklist, security-reviewer, Gemini)
+    └─ Phase 6: PR (commit, push, gh pr create, Closes #42)
+```
+
+## Structure
+
+```
+ai-dev-templates/
+├── .claude-plugin/
+│   └── plugin.json
+├── skills/
+│   ├── dev/SKILL.md
+│   ├── review/SKILL.md
+│   ├── pr/SKILL.md
+│   ├── tech-debt/SKILL.md
+│   ├── monitor/SKILL.md
+│   └── init-project/
+│       ├── SKILL.md
+│       └── templates/
+├── agents/
+│   ├── security-reviewer.md
+│   └── test-writer.md
+├── hooks/
+│   └── hooks.json
+├── scripts/
+│   ├── auto-lint.sh
+│   └── block-dangerous-commands.sh
+└── rules/
+    ├── behavior.md
+    ├── coding-conventions.md
+    └── ai-ops.md
+```
 
 ## License
 

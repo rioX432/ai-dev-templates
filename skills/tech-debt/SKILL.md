@@ -1,3 +1,8 @@
+---
+description: "Scan the codebase for technical debt and create GitHub Issues for high-severity findings. Use periodically or during autonomous improvement cycles."
+user-invocable: true
+---
+
 Scan the codebase for technical debt and refactoring opportunities, then create GitHub Issues for actionable items.
 
 ## Steps

@@ -5,10 +5,14 @@ Claude Code plugin for AI-driven development workflows. Provides autonomous issu
 ## Install
 
 ```bash
-claude plugin install /path/to/ai-dev-templates --scope user
+# 1. Register marketplace (once)
+/plugin marketplace add rioX432/ai-dev-templates
+
+# 2. Install to project (recorded in .claude/settings.json → Git managed)
+/plugin install ai-dev --scope project
 ```
 
-Or test locally:
+For development/testing:
 
 ```bash
 claude --plugin-dir /path/to/ai-dev-templates
@@ -56,7 +60,8 @@ claude --plugin-dir /path/to/ai-dev-templates
 ```
 ai-dev-templates/
 ├── .claude-plugin/
-│   └── plugin.json
+│   ├── plugin.json
+│   └── marketplace.json
 ├── skills/
 │   ├── dev/SKILL.md
 │   ├── review/SKILL.md

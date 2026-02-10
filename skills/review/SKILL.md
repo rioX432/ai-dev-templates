@@ -1,3 +1,8 @@
+---
+description: "Run a multi-phase code review against the base branch. Use when reviewing changes before PR creation or during fix-issue Phase 5."
+user-invocable: true
+---
+
 Review the current branch's changes against the base branch.
 
 ## Steps

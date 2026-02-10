@@ -1,0 +1,10 @@
+{
+  "name": "ai-dev",
+  "version": "1.0.0",
+  "description": "AI-driven development workflow plugin — autonomous issue fixing, code review, PR creation, tech debt scanning, and KPI monitoring",
+  "author": {
+    "name": "rio"
+  },
+  "license": "MIT",
+  "keywords": ["ai-dev", "code-review", "pr", "tech-debt", "autonomous"]
+}

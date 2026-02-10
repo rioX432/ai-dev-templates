@@ -1,4 +1,5 @@
 {
+  "$schema": "https://claude.ai/schemas/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(git *)",
@@ -24,7 +25,6 @@
       "Bash(rm *.tmp)",
       "Bash(rm *.log)",
       "Bash(ls *)",
-      "Bash(cat *)",
       "Bash(which *)",
       "Bash(java -version)",
       "Bash(kotlin -version)",
@@ -41,6 +41,15 @@
       "Bash(docker *)",
       "Bash(docker-compose *)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(cat .env*)",
+      "Bash(echo *secret*)",
+      "Bash(echo *password*)",
+      "Bash(echo *api_key*)",
+      "Bash(curl *credentials*)"
+    ]
+  },
+  "preferences": {
+    "attribution": false
   }
 }

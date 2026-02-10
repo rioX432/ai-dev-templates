@@ -1,3 +1,8 @@
+---
+description: "Create a pull request for the current branch. Use when ready to submit changes or during fix-issue Phase 6."
+user-invocable: true
+---
+
 Create a pull request for the current branch.
 
 ## Steps

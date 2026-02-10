@@ -1,0 +1,42 @@
+# Claude Code — Automated PR Review
+# Triggers on PR creation and updates
+#
+# Prerequisites:
+# - ANTHROPIC_API_KEY secret
+
+name: Claude Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Review this pull request using the following checklist:
+
+            1. Architecture & Design — SRP, follows project conventions, no unnecessary complexity
+            2. Mobile (Compose/SwiftUI) — recomposition, state management, memory, threading
+            3. KMP — expect/actual completeness, no platform imports in commonMain
+            4. Data & Performance — no leaks, no main thread work, proper caching
+            5. Security (OWASP MASVS) — no secrets, no sensitive logs, input sanitized
+            6. Quality — error handling, externalized strings, naming, tests, accessibility
+
+            Output findings grouped by severity: Critical / Warning / Suggestion / Nit.
+            Post results as a PR review comment.
+          # Uncomment to use ai-dev plugin:
+          # plugin_dirs: "./path-to-ai-dev-templates"

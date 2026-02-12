@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "ai-dev",
-      "source": ".",
+      "source": "./",
       "description": "Autonomous issue fixing, code review, PR creation, tech debt scanning, and KPI monitoring",
       "version": "1.0.0"
     }

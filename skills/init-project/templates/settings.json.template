@@ -39,14 +39,18 @@
       "Bash(curl *)",
       "Bash(sqlite3 *)",
       "Bash(docker *)",
-      "Bash(docker-compose *)"
+      "Bash(docker-compose *)",
+      "Bash(ktlint *)",
+      "Bash(swiftlint *)"
     ],
     "deny": [
       "Bash(cat .env*)",
       "Bash(echo *secret*)",
       "Bash(echo *password*)",
       "Bash(echo *api_key*)",
-      "Bash(curl *credentials*)"
+      "Bash(curl *credentials*)",
+      "Edit(*.pbxproj)",
+      "Write(*.pbxproj)"
     ]
   },
   "preferences": {

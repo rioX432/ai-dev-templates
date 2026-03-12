@@ -39,15 +39,9 @@ Autonomously resolve GitHub Issue #$ARGUMENTS from investigation to PR creation.
 
 ## Phase 5: Self-Review
 
-1. Run the review checklist (same as `/ai-dev:review`):
-   - Architecture & Design
-   - Mobile (Compose/SwiftUI) if applicable
-   - KMP if applicable
-   - Data & Performance
-   - Security (OWASP MASVS)
-   - Quality
-2. Run security-reviewer agent if available
-3. Use Gemini MCP (`mcp__gemini-cli__ask-gemini`) for cross-review on non-trivial changes
+1. Read `REVIEW.md` at the project root for review criteria
+2. Run `/ai-dev:review` to execute multi-agent review (Bug/Security + Architecture/UI agents)
+3. Run security-reviewer agent if available
 4. If Critical or Warning findings exist, go back to Phase 3 and fix
 5. Extract reusable insights into `docs/claude/review_points.md`
 

@@ -1,6 +1,6 @@
 # ai-dev
 
-Claude Code plugin for AI-driven development workflows. Provides autonomous issue resolution, code review, PR creation, tech debt scanning, and KPI monitoring.
+Claude Code plugin for AI-driven development workflows. Provides autonomous issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring.
 
 ## Install
 
@@ -23,18 +23,26 @@ claude --plugin-dir /path/to/ai-dev-templates
 | Skill | Description |
 |---|---|
 | `/ai-dev:dev {N}` | Autonomous end-to-end: investigate → plan → implement → test → review → PR |
-| `/ai-dev:review` | Multi-phase code review (Architecture → Mobile → KMP → Perf → Security → Quality) with Gemini cross-review |
+| `/ai-dev:review` | Multi-agent code review (Bug/Security + Architecture/UI agents in parallel) with Gemini cross-review |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:tech-debt` | Codebase scan for technical debt, auto-creates GitHub Issues for high-severity findings |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, store reviews, metrics → issue proposals |
-| `/ai-dev:init-project {path}` | Initialize a project with templates (CLAUDE.md, settings, CI, workflows) |
+| `/ai-dev:init-project {path}` | Initialize a project with templates (CLAUDE.md, REVIEW.md, settings, CI, workflows) |
 
 ## Agents
 
-| Agent | Role |
+| Agent | Model | Role |
+|---|---|---|
+| `security-reviewer` | sonnet | OWASP MASVS vulnerability scanner |
+| `test-writer` | sonnet | Unit test generation for changed code |
+
+## Templates
+
+| Template | Description |
 |---|---|
-| `security-reviewer` | OWASP MASVS vulnerability scanner |
-| `test-writer` | Unit test generation for changed code |
+| `CLAUDE.md` | Project configuration with `@REVIEW.md` import, commands, architecture, Think Twice checklist |
+| `REVIEW.md` | Review criteria: severity definitions, platform-specific checks, false positive reduction guide |
+| `settings.json` | Permissions with `*.pbxproj` deny rules, linter allow rules |
 
 ## Hooks
 
@@ -51,8 +59,22 @@ claude --plugin-dir /path/to/ai-dev-templates
     ├─ Phase 2: Plan (present to user for approval)
     ├─ Phase 3: Implement (branch, code, auto-lint)
     ├─ Phase 4: Test (test-writer agent, build, run)
-    ├─ Phase 5: Self-review (checklist, security-reviewer, Gemini)
+    ├─ Phase 5: Self-review (REVIEW.md + multi-agent review + security-reviewer)
     └─ Phase 6: PR (commit, push, gh pr create, Closes #42)
+```
+
+## Workflow: review
+
+```
+/ai-dev:review
+    ├─ Step 0: Checkout & prepare (branch, commits, diff)
+    ├─ Step 1: Build change context (intent, risk areas)
+    ├─ Step 2: Multi-agent parallel review
+    │   ├─ Agent A: Bug & Logic + Security (sonnet)
+    │   └─ Agent B: Architecture & UI (sonnet)
+    ├─ Step 3: Merge & deduplicate findings
+    ├─ Step 4: Cross-review verification (Gemini)
+    └─ Step 5: Final report with verification attribution
 ```
 
 ## Structure
@@ -71,6 +93,9 @@ ai-dev-templates/
 │   └── init-project/
 │       ├── SKILL.md
 │       └── templates/
+│           ├── CLAUDE.md.template
+│           ├── REVIEW.md.template
+│           └── settings.json.template
 ├── agents/
 │   ├── security-reviewer.md
 │   └── test-writer.md

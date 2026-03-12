@@ -1,97 +1,113 @@
 ---
-description: "Run a multi-phase code review against the base branch. Use when reviewing changes before PR creation or during fix-issue Phase 5."
+description: "Multi-agent code review against the base branch. Use when reviewing changes before PR creation or during fix-issue Phase 5."
 user-invocable: true
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Agent
+  - "Bash(git *)"
+  - "Bash(gh *)"
 ---
 
-Review the current branch's changes against the base branch.
+Review the current branch's changes against the base branch using parallel review agents.
 
-## Steps
+## Step 0: Checkout & Prepare
 
-1. Identify the base branch and current branch
-2. Read all changed files (not just diff — full file context)
-3. Run the review checklist below, skipping sections not applicable to this project
-4. Use Gemini MCP (`mcp__gemini-cli__ask-gemini`) for cross-review on non-trivial changes
-5. Output findings grouped by severity: Critical / Warning / Suggestion / Nit
+1. Identify the base branch (`main` or `master`) and current branch
+2. Run `git log` to get the list of commits on this branch
+3. Run `git diff` against the base branch to get the full changeset
+4. Read the PR description if available: `gh pr view --json body`
+5. **Important**: Run each command individually — do NOT chain with `&&`
 
-## Review Checklist
+## Step 1: Build Change Context
 
-### Phase 1: Architecture & Design (Google Engineering Practices)
-- [ ] Change improves overall code health (not necessarily "perfect")
-- [ ] Follows project architecture defined in CLAUDE.md
-- [ ] SRP: each class/function has a single responsibility
-- [ ] No unnecessary complexity — simplest solution that works
-- [ ] Technical decisions based on data/standards, not personal preference
+1. From the commit messages and PR description, understand the **intent** of the change
+2. List all changed files and categorize them:
+   - **Core logic** (business logic, data layer)
+   - **UI** (Compose, SwiftUI, layouts)
+   - **Infrastructure** (build, CI, config)
+   - **Tests**
+3. Identify **risk areas**: files with complex changes, new integrations, security-sensitive code
 
-### Phase 2: Mobile — Android (Compose) [skip if not applicable]
-- [ ] No unnecessary recomposition (missing `remember`, `key`, `derivedStateOf`)
-- [ ] No backwards write in composition
-- [ ] LazyColumn/LazyRow has `key` parameter
-- [ ] State read deferred where possible (lambda modifiers)
-- [ ] `@Stable`/`@Immutable` on data classes passed to composables
-- [ ] No IO/network on main thread
-- [ ] `LaunchedEffect`/`DisposableEffect` keys are correct
-- [ ] No `GlobalScope`, no `!!`
+## Step 2: Multi-Agent Parallel Review
 
-### Phase 3: Mobile — iOS (SwiftUI) [skip if not applicable]
-- [ ] `[weak self]` in closures that capture self
-- [ ] No global ViewModel singletons
-- [ ] `@StateObject` scoped to owning view
-- [ ] `.task` cancellation handled (`.onDisappear` cleanup)
-- [ ] No force unwrap (`!`)
-- [ ] `deinit` logging on ViewModels for leak detection
-- [ ] Combine subscriptions cancelled on disappear
+Launch **two review agents in parallel** using the Agent tool (model: sonnet):
 
-### Phase 4: KMP Shared Code [skip if not applicable]
-- [ ] All `expect` declarations have `actual` for every target
-- [ ] Business logic uses interfaces, not `expect class`
-- [ ] Shared code changes have unit tests in `commonTest`
-- [ ] No platform-specific imports in `commonMain`
+### Agent A: Bug & Logic + Security
+```
+Review the following changed files for bugs, logic errors, and security issues.
+Read REVIEW.md at the project root for review criteria.
 
-### Phase 5: Data & Performance
-- [ ] Room entities/DAOs follow schema conventions
-- [ ] No memory leaks (long-lived references to short-lived objects)
-- [ ] No heavy work on main/UI thread (no ANR risk)
-- [ ] No unnecessary network calls or redundant API requests
-- [ ] Battery: no unnecessary background work
-- [ ] Images cached appropriately (Coil)
-- [ ] Caching used where appropriate
+Focus areas:
+- Null safety violations
+- Structured concurrency issues
+- Error handling gaps
+- Security (OWASP MASVS): hardcoded secrets, input sanitization, data exposure
+- API level / platform compatibility
+- Data & performance: memory leaks, main thread blocking, redundant network calls
 
-### Phase 6: Security (OWASP MASVS)
-- [ ] No hardcoded secrets, passwords, API keys
-- [ ] No sensitive data in logs
-- [ ] User input sanitized
-- [ ] Local storage encrypted where needed
+For each finding, report: [file:line] severity — description
+Severity levels: Critical / Warning / Suggestion / Nit
+```
 
-### Phase 7: Quality
-- [ ] Error handling covers all failure cases
-- [ ] UI strings externalized (no hardcoded text)
-- [ ] No magic numbers (use constants or design tokens)
-- [ ] Naming is clear and consistent
-- [ ] Tests added/updated for changed code
-- [ ] Dark mode: no pure black (#000000), no pure white (#FFFFFF)
-- [ ] Accessibility: Dynamic Type / VoiceOver / TalkBack / contrast
+### Agent B: Architecture & UI
+```
+Review the following changed files for architecture and UI quality.
+Read REVIEW.md at the project root for review criteria.
 
-## Output Format
+Focus areas:
+- Architecture: SRP, layer boundaries, DI patterns
+- Compose: recomposition, remember/key, state management, effect handlers
+- SwiftUI: @StateObject scoping, weak self, task cancellation
+- KMP: expect/actual consistency, no platform imports in commonMain
+- Testing: changed code has corresponding test updates
+
+For each finding, report: [file:line] severity — description
+Severity levels: Critical / Warning / Suggestion / Nit
+```
+
+## Step 3: Merge Agent Findings
+
+1. Collect findings from both agents
+2. **Deduplicate**: remove findings reported by both agents
+3. Assign final severity based on REVIEW.md definitions:
+   - **Critical**: crash, data loss, security vulnerability, incorrect behavior
+   - **Warning**: potential bug, performance issue, architectural violation
+   - **Suggestion**: improvement opportunity, non-blocking
+   - **Nit**: style/preference, optional
+
+## Step 4: Cross-Review Verification
+
+Use Gemini MCP (`mcp__gemini-deepsearch__deep_search`) for cross-review on non-trivial changes:
+- Share the merged findings and ask Gemini to verify or challenge them
+- Apply consensus rules:
+  - **3 reviewers agree** (Agent A + Agent B + Gemini): high confidence
+  - **2 agree**: include with note
+  - **1 only**: include as "unverified" unless Critical severity
+
+## Step 5: Present Final Report
 
 ```
 ## Review Summary
 
-**Branch:** feature/xxx → main
+**Branch:** {current} → {base}
 **Files changed:** N
 **Risk level:** Low / Medium / High
+**Reviewed by:** Agent A (Bug/Security) + Agent B (Arch/UI) + Gemini
 
 ### Critical (must fix)
-- [file:line] description
+- [file:line] description — verified by: {agents}
 
 ### Warning (should fix)
-- [file:line] description
+- [file:line] description — verified by: {agents}
 
 ### Suggestion (nice to have)
-- [file:line] description
+- [file:line] description — verified by: {agents}
 
 ### Nit (optional)
 - [file:line] description
 
-### Cross-Review (Gemini)
-- summary of Gemini's findings
+### Cross-Review Notes
+- {Gemini's additional findings or disagreements}
 ```

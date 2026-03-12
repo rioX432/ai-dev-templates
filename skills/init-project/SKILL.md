@@ -1,5 +1,5 @@
 ---
-description: "Initialize a new project with AI-driven development templates. Copies CLAUDE.md, settings, PR template, CI workflows, and GitHub Actions to the target project."
+description: "Initialize a new project with AI-driven development templates. Copies CLAUDE.md, REVIEW.md, settings, PR template, CI workflows, and GitHub Actions to the target project."
 user-invocable: true
 argument-hint: "{project-path}"
 ---
@@ -21,6 +21,7 @@ Copy the following from `skills/init-project/templates/`:
 | Source | Destination | Action |
 |---|---|---|
 | `CLAUDE.md.template` | `$ARGUMENTS/CLAUDE.md` | Copy and prompt to fill in project details |
+| `REVIEW.md.template` | `$ARGUMENTS/REVIEW.md` | Copy as-is (auto-detected by Claude Code Review) |
 | `settings.json.template` | `$ARGUMENTS/.claude/settings.json` | Copy as-is |
 | `pull_request_template.md` | `$ARGUMENTS/.github/pull_request_template.md` | Copy as-is |
 
@@ -46,14 +47,7 @@ $ARGUMENTS/rules/
   ai-ops.md
 ```
 
-### 5. Create Directory Structure
-
-```bash
-mkdir -p "$ARGUMENTS/docs/claude"
-touch "$ARGUMENTS/docs/claude/review_points.md"
-```
-
-### 6. Post-Setup Instructions
+### 5. Post-Setup Instructions
 
 Output a checklist for the user:
 
@@ -62,15 +56,16 @@ Output a checklist for the user:
 
 Files created:
 - CLAUDE.md ← Fill in project name, architecture, tech stack
+- REVIEW.md ← Customize review criteria for your project
 - .claude/settings.json ← Add project-specific commands if needed
 - .github/pull_request_template.md
 - .github/workflows/ ← Rename .template files to .yml when ready
 - rules/ ← Customize behavior, coding conventions, and AI ops rules
-- docs/claude/review_points.md ← Will grow as reviews happen
 
 ## Next Steps
 1. Edit CLAUDE.md — fill in {PROJECT_NAME}, architecture, tech stack
-2. Edit rules/ — customize for your project's conventions
-3. Rename workflow .template files to .yml and configure secrets
-4. Commit the setup: git add -A && git commit -m "Add AI-driven development templates"
+2. Edit REVIEW.md — adjust review criteria and add project-specific patterns
+3. Edit rules/ — customize for your project's conventions
+4. Rename workflow .template files to .yml and configure secrets
+5. Commit the setup: git add -A && git commit -m "Add AI-driven development templates"
 ```

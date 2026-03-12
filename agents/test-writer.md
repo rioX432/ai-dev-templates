@@ -49,7 +49,7 @@ Analyze the specified source files and generate or update unit tests.
 - **Swift**: Look for XCTest, Quick/Nimble
 - **TypeScript/JavaScript**: Look for Jest, Vitest, Mocha
 - **Python**: Look for pytest, unittest
-- **Dart/Flutter**: Look for flutter_test, mockito
+
 
 ### What NOT to Test
 - Private functions (test through public API)

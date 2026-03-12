@@ -1,0 +1,102 @@
+# Code Review Guidelines
+
+## Always Check — Critical (Must Flag)
+
+### Null Safety
+- Force unwrap (`!!` / `!`) on external data or API responses
+- Missing null checks on nullable types from network/DB
+
+### Structured Concurrency
+- `GlobalScope` usage — use structured scope (`viewModelScope`, `lifecycleScope`)
+- Missing cancellation handling in coroutines/Combine/async-await
+- Blocking calls on main thread (IO, network, heavy computation)
+
+### Compose / SwiftUI
+- Missing `remember` / `key` causing unnecessary recomposition
+- Backwards write in composition (state mutation during compose phase)
+- LazyColumn/LazyRow without `key` parameter
+- `@StateObject` not scoped to owning view (SwiftUI)
+
+### Architecture
+- Violation of project architecture defined in CLAUDE.md
+- Business logic in UI layer (ViewModel logic in Composable/View)
+- Direct dependency on concrete implementations (missing DI)
+
+### API Level / Platform
+- API usage without version check (`Build.VERSION.SDK_INT`)
+- Deprecated API without migration plan
+- Missing `actual` implementation for `expect` declarations (KMP)
+
+### Security
+- Hardcoded secrets, API keys, passwords, tokens
+- Sensitive data in logs or error messages
+- User input not sanitized (SQL injection, XSS in WebView)
+- HTTP instead of HTTPS
+
+## Always Check — Important (Should Flag)
+
+### Error Handling
+- Swallowed exceptions (empty catch blocks)
+- Generic catch-all without specific error handling
+- Missing error states in UI (loading/error/empty)
+
+### Compose UI Quality
+- State read not deferred where possible (lambda modifiers)
+- Missing `@Stable`/`@Immutable` on data classes passed to composables
+- `LaunchedEffect`/`DisposableEffect` with incorrect keys
+
+### State Management
+- Mutable state exposed from ViewModel (should be read-only externally)
+- Side effects outside of effect handlers
+
+### Dependency Injection
+- Manual instantiation where DI should be used
+- Singleton abuse for stateful objects
+
+### Testing
+- Changed code without corresponding test updates
+- Missing edge case tests (null, empty, error states)
+
+## Always Check — Suggestion
+
+- Naming improvements (non-blocking)
+- Code style improvements that don't affect correctness
+- Documentation suggestions for complex logic
+- Performance micro-optimizations (non-critical)
+
+## Project-Specific Patterns
+
+Refer to `docs/BUG_PATTERNS.md` for project-specific patterns discovered during development.
+Do not duplicate items already covered there.
+
+## Skip (Do Not Flag)
+
+- Issues already caught by detekt / ktlint / swiftlint / ESLint
+- Pre-existing issues in unchanged code (unless directly related to the change)
+- Generated code (Room DAOs, Proto, R files, BuildConfig)
+- Translation/localization string content
+- Code formatting / import ordering
+
+## Cross-Repository Awareness
+
+When reviewing changes in multi-repo projects (KMM shared + Android + iOS + Server):
+
+- **KMM shared changes**: Verify `expect`/`actual` consistency across all targets
+- **API contract changes**: Check if server and client are in sync
+- **Shared model changes**: Verify serialization compatibility across platforms
+- **Feature flags**: Confirm flag exists and is consistent across platforms
+
+## Severity Definitions & Calibration
+
+| Severity | Definition | Action |
+|---|---|---|
+| **Critical** | Will cause crash, data loss, security vulnerability, or incorrect behavior | Must fix before merge |
+| **Warning** | Potential bug, performance issue, or architectural violation | Should fix before merge |
+| **Suggestion** | Improvement opportunity, not blocking | Consider for future |
+| **Nit** | Style/preference, purely optional | Author's discretion |
+
+### False Positive Reduction
+- Do NOT flag findings you cannot verify from the code context
+- If unsure whether something is intentional, ask rather than flag
+- Check if a pattern is established elsewhere in the codebase before flagging
+- Prefer fewer, high-confidence findings over many uncertain ones

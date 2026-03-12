@@ -48,11 +48,6 @@ case "$EXT" in
       black "$FILE_PATH" 2>/dev/null || true
     fi
     ;;
-  dart)
-    if command -v dart &>/dev/null; then
-      dart format "$FILE_PATH" 2>/dev/null || true
-    fi
-    ;;
   json)
     if command -v jq &>/dev/null; then
       TMP=$(mktemp)

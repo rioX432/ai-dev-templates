@@ -1,19 +1,22 @@
 # {PROJECT_NAME}
 
+@REVIEW.md
+
 ## Project Overview
-<!-- Brief description of the project -->
+<!-- 1-2 lines describing the project -->
 
-## Rules
-
-@rules/behavior.md
-@rules/coding-conventions.md
-@rules/ai-ops.md
+## Commands
+<!-- Most important section: build, test, lint commands -->
+```
+./gradlew assembleDebug
+./gradlew test
+./gradlew detekt
+```
 
 ## Architecture
-<!-- Define project structure -->
-
+<!-- Module structure diagram -->
 ```
-src/
+app/
   ...
 ```
 
@@ -23,15 +26,16 @@ src/
 |---|---|
 | ... | ... |
 
-## Detailed Guides (External Files)
+## Think Twice
+- Requirements met?
+- Consistent with existing patterns?
+- Edge cases (null, empty, offline, error)?
+- No unverified assumptions?
 
-| File | Contents |
-|---|---|
-| `docs/claude/coding-conventions.md` | Coding conventions (Kotlin / Swift / general) |
-| `docs/claude/design-decisions.md` | Design decisions and guidelines |
-| `docs/claude/review_points.md` | Review insights extracted from past reviews |
+## Key Gotchas
+<!-- Add project-specific pitfalls as discovered during development -->
+<!-- Example: Detekt auto-correct changes import order → run twice -->
 
-## Common Mistakes (Don't Do)
-
-<!-- Add project-specific pitfalls below -->
-- ...
+## Language
+- Code comments, variable names: English
+- Commits: concise single line, English

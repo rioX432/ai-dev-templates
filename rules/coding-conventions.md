@@ -15,8 +15,3 @@
 - All public functions must have unit tests
 - Follow AAA pattern (Arrange, Act, Assert)
 - Test names describe behavior, not implementation
-
-## Common Mistakes (Don't Do)
-
-<!-- Add project-specific pitfalls here -->
-- ...

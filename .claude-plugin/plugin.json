@@ -1,10 +1,22 @@
 {
   "name": "ai-dev",
-  "version": "1.1.0",
-  "description": "AI-driven development workflow plugin — autonomous issue fixing, code review, PR creation, tech debt scanning, and KPI monitoring",
+  "version": "2.0.0",
+  "description": "AI-driven development workflow plugin — E2E issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring. Language-agnostic harness engineering.",
   "author": {
     "name": "rio"
   },
   "license": "MIT",
-  "keywords": ["ai-dev", "code-review", "pr", "tech-debt", "autonomous"]
+  "keywords": [
+    "ai-dev",
+    "harness-engineering",
+    "code-review",
+    "autonomous-development",
+    "multi-agent"
+  ],
+  "commands": ["./skills/"],
+  "agents": [
+    "./agents/security-reviewer.md",
+    "./agents/test-writer.md"
+  ],
+  "hooks": "./hooks/hooks.json"
 }

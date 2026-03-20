@@ -1,8 +1,10 @@
 ---
 name: test-writer
-description: "Generate unit tests for changed or new code. Use during fix-issue Phase 4 to ensure test coverage."
+description: "Generate unit tests for changed or new code. Use during development to ensure test coverage."
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
+maxTurns: 30
+permissionMode: bypassPermissions
 ---
 
 # Test Writer Agent
@@ -32,10 +34,6 @@ Analyze the specified source files and generate or update unit tests.
 ### Naming Convention
 - Test names describe the behavior being tested
 - Pattern: `{functionName}_{scenario}_{expectedResult}` or descriptive sentence
-- Examples:
-  - `fetchUser_withValidId_returnsUser`
-  - `fetchUser_withInvalidId_throwsNotFoundException`
-  - `should return empty list when no items match filter`
 
 ### Structure (AAA Pattern)
 ```
@@ -49,19 +47,16 @@ Analyze the specified source files and generate or update unit tests.
 - **Swift**: Look for XCTest, Quick/Nimble
 - **TypeScript/JavaScript**: Look for Jest, Vitest, Mocha
 - **Python**: Look for pytest, unittest
-
+- **Rust**: Look for #[test], #[cfg(test)]
+- **Go**: Look for _test.go, testing.T
 
 ### What NOT to Test
 - Private functions (test through public API)
 - Simple getters/setters with no logic
 - Framework/library code
-- Generated code (Room DAOs, Proto, etc.)
+- Generated code
 
 ## Output
-
-- Write test files to the appropriate test directory
-- Follow existing test file location patterns
-- Report what was tested and test count
 
 ```
 ## Tests Generated
@@ -70,10 +65,6 @@ Analyze the specified source files and generate or update unit tests.
 **Test files created/updated:** N
 **Tests written:** N
 
-| Source File | Test File | Tests Added | Coverage |
-|---|---|---|---|
-| src/Feature.kt | test/FeatureTest.kt | 5 | public API |
-
-### Notes
-- {any assumptions or limitations}
+| Source File | Test File | Tests Added |
+|---|---|---|
 ```

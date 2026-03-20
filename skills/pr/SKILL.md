@@ -1,26 +1,39 @@
 ---
-description: "Create a pull request for the current branch. Use when ready to submit changes or during fix-issue Phase 6."
+name: pr
+description: "Create a pull request for the current branch using the project's PR template"
 user-invocable: true
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash(git status)
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git push:*)
+  - Bash(gh pr create:*)
+  - Bash(gh issue view:*)
 ---
+
+# /pr — Pull Request Creation
 
 Create a pull request for the current branch.
 
 ## Steps
 
-1. Run `git status` and `git diff` to understand all changes
-2. Check if the current branch has a remote tracking branch; push if needed
-3. Run `git log` and `git diff <base-branch>...HEAD` to understand ALL commits (not just the latest)
+1. `git status` and `git diff` to understand all changes
+2. Check if the current branch has a remote; push with `-u` if needed
+3. `git log` and `git diff <base>...HEAD` to understand ALL commits
 4. Look up the related GitHub Issue from branch name or commit messages
-5. Draft PR title and body using the project's PR template at `.github/pull_request_template.md`
-6. Create the PR with `gh pr create`
+5. Read `.github/pull_request_template.md` if it exists
+6. Create PR with `gh pr create`
 
 ## Rules
 
-- Title format: `#{Issue Number} {concise description}` (e.g., `#42 Add notification quiz for iOS`)
-- If no GitHub Issue exists, omit the number
-- Title must be under 70 characters
-- Description section: fill in with bullet points summarizing changes
-- Other template sections: leave as-is (commented out)
+- Title: `#{Issue} {concise description}` (under 70 chars)
+- If no issue: omit the number
+- Description: bullet points summarizing changes
+- Other template sections: leave as-is
 - No AI stamps, no Co-Authored-By
 - Always set base branch explicitly
-- Link related issues with `Closes #XX` in the body if applicable
+- Link issues with `Closes #XX` in body if applicable

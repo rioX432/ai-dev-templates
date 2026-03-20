@@ -1,7 +1,26 @@
 ---
-description: "KPI monitoring and issue proposal: analyze crash rates, store reviews, and metrics to suggest next priorities. Use periodically or in autonomous improvement cycles."
+name: monitor
+description: "KPI monitoring and issue proposal: analyze crash rates, store reviews, and metrics to suggest next priorities"
 user-invocable: true
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Agent
+  - Bash(gh issue create:*)
+  - Bash(gh issue list:*)
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
+  - AskUserQuestion
+  - ToolSearch
 ---
+
+# /monitor — KPI Monitoring & Prioritization (PoC)
+
+> **Status: Proof of Concept** — Requires Firebase MCP, Store API access, and analytics integration.
+> This skill defines the target workflow for fully autonomous AI-driven operations.
 
 Monitor project KPIs and propose next actions based on data.
 
@@ -53,7 +72,7 @@ Score potential features on two axes:
 ### 5. Issue Proposal
 
 For each recommended action:
-```
+```bash
 gh issue create \
   --title "{priority-label}: {concise description}" \
   --body "{rationale with data points}" \
@@ -71,17 +90,12 @@ gh issue create \
 ### Health
 | Metric | Current | Trend | Status |
 |---|---|---|---|
-| Crash-free | 99.8% | ↑ | OK |
-| D1 Retention | 45% | → | OK |
-| ... | ... | ... | ... |
 
 ### Issues Created
 | # | Title | Priority | Rationale |
 |---|---|---|---|
-| #XX | ... | High | ... |
 
 ### Recommended Next Actions
 1. ...
 2. ...
-3. ...
 ```

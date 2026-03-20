@@ -1,5 +1,5 @@
 {
-  "description": "AI Dev plugin hooks: auto-lint on file changes, block dangerous commands",
+  "description": "AI Dev plugin hooks: auto-lint, block dangerous commands, failure logging, context restoration",
   "hooks": {
     "PreToolUse": [
       {
@@ -22,6 +22,28 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/auto-lint.sh",
             "timeout": 30,
             "async": true
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/log-failure.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restore-context.sh",
+            "timeout": 5
           }
         ]
       }

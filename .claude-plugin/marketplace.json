@@ -1,17 +1,17 @@
 {
-  "name": "rioX432/ai-dev-templates",
+  "name": "ai-dev-templates",
   "owner": {
     "name": "rio"
   },
   "metadata": {
-    "description": "AI-driven development workflow plugins"
+    "description": "AI-driven development workflow plugins with harness engineering best practices"
   },
   "plugins": [
     {
       "name": "ai-dev",
       "source": "./",
-      "description": "Autonomous issue fixing, code review, PR creation, tech debt scanning, and KPI monitoring",
-      "version": "1.1.0"
+      "description": "E2E issue resolution, multi-agent review, PR creation, tech debt scanning — language-agnostic",
+      "version": "2.0.0"
     }
   ]
 }

@@ -1,0 +1,31 @@
+{
+  "projects": [
+    "../CivitDeck",
+    "../live-translate",
+    "../vtslide",
+    "../KMP-FaceLink",
+    "../VocaDrip",
+    "../personal-ai-secretary",
+    "../kamibukuro",
+    "../desk-secretary-bot"
+  ],
+  "common_skills": [
+    "dev",
+    "dev-all",
+    "review",
+    "pr",
+    "dig",
+    "decompose",
+    "tech-debt",
+    "audit"
+  ],
+  "common_agents": [
+    "security-reviewer",
+    "test-writer"
+  ],
+  "common_rules": [
+    "behavior.md",
+    "ai-ops.md"
+  ],
+  "sync_hooks": true
+}

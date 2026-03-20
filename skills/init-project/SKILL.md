@@ -1,8 +1,19 @@
 ---
-description: "Initialize a new project with AI-driven development templates. Copies CLAUDE.md, REVIEW.md, settings, PR template, CI workflows, and GitHub Actions to the target project."
+name: init-project
+description: "Initialize a new project with AI-driven development templates and Plugin configuration"
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "{project-path}"
+allowed-tools:
+  - Read
+  - Write
+  - Bash(mkdir:*)
+  - Bash(cp:*)
+  - Bash(ls:*)
+  - AskUserQuestion
 ---
+
+# /init-project — Project Initialization
 
 Initialize a project at `$ARGUMENTS` with AI-driven development templates.
 
@@ -16,56 +27,82 @@ Initialize a project at `$ARGUMENTS` with AI-driven development templates.
 
 ### 2. Copy Core Files
 
-Copy the following from `skills/init-project/templates/`:
+Copy the following from `${CLAUDE_SKILL_DIR}/templates/`:
 
 | Source | Destination | Action |
 |---|---|---|
-| `CLAUDE.md.template` | `$ARGUMENTS/CLAUDE.md` | Copy and prompt to fill in project details |
-| `REVIEW.md.template` | `$ARGUMENTS/REVIEW.md` | Copy as-is (auto-detected by Claude Code Review) |
+| `CLAUDE.md.template` | `$ARGUMENTS/CLAUDE.md` | Copy, prompt to fill in |
+| `REVIEW.md.template` | `$ARGUMENTS/REVIEW.md` | Copy as-is |
 | `settings.json.template` | `$ARGUMENTS/.claude/settings.json` | Copy as-is |
 | `pull_request_template.md` | `$ARGUMENTS/.github/pull_request_template.md` | Copy as-is |
 
-### 3. Copy Workflow Templates
+### 3. Copy Common Skills
 
-Ask user which workflows to include:
-
-| Template | Destination | Description |
-|---|---|---|
-| `ci.yml.template` | `$ARGUMENTS/.github/workflows/ci.yml.template` | KMP CI pipeline |
-| `ai-ops-daily.yml.template` | `$ARGUMENTS/.github/workflows/ai-ops-daily.yml.template` | Daily AI analysis |
-| `claude-code.yml.template` | `$ARGUMENTS/.github/workflows/claude-code.yml` | Issue → PR automation |
-| `claude-review.yml.template` | `$ARGUMENTS/.github/workflows/claude-review.yml` | Automated PR review |
-
-### 4. Copy Rules
-
-Copy the `rules/` directory to the project:
+Copy shared skills from ai-dev-templates:
 
 ```
-$ARGUMENTS/rules/
+$ARGUMENTS/.claude/skills/
+  dev/SKILL.md
+  dev-all/SKILL.md
+  review/SKILL.md
+  pr/SKILL.md
+  dig/SKILL.md
+  decompose/SKILL.md
+  tech-debt/SKILL.md
+  audit/SKILL.md
+```
+
+### 4. Copy Common Agents
+
+```
+$ARGUMENTS/.claude/agents/
+  security-reviewer.md
+  test-writer.md
+```
+
+### 5. Copy Common Rules
+
+```
+$ARGUMENTS/.claude/rules/
   behavior.md
-  coding-conventions.md
   ai-ops.md
 ```
 
-### 5. Post-Setup Instructions
+### 6. Copy Workflow Templates (Optional)
 
-Output a checklist for the user:
+Ask user which workflows to include:
+
+| Template | Description |
+|---|---|
+| `ci.yml.template` | CI pipeline |
+| `ai-ops-daily.yml.template` | Daily AI analysis |
+| `claude-code.yml.template` | Issue → PR automation |
+| `claude-review.yml.template` | Automated PR review |
+
+### 7. Post-Setup Instructions
 
 ```
 ## Setup Complete
 
 Files created:
-- CLAUDE.md ← Fill in project name, architecture, tech stack
-- REVIEW.md ← Customize review criteria for your project
-- .claude/settings.json ← Add project-specific commands if needed
+- CLAUDE.md ← Fill in project name, architecture, tech stack, commands
+- REVIEW.md ← Customize review criteria
+- .claude/settings.json ← Add project-specific permissions
+- .claude/skills/ ← Shared skills (synced from ai-dev-templates)
+- .claude/agents/ ← Shared + add project-specific agents
+- .claude/rules/ ← Shared + add project-specific rules
 - .github/pull_request_template.md
-- .github/workflows/ ← Rename .template files to .yml when ready
-- rules/ ← Customize behavior, coding conventions, and AI ops rules
 
 ## Next Steps
-1. Edit CLAUDE.md — fill in {PROJECT_NAME}, architecture, tech stack
-2. Edit REVIEW.md — adjust review criteria and add project-specific patterns
-3. Edit rules/ — customize for your project's conventions
+1. Edit CLAUDE.md — fill in project details, especially Commands section
+2. Add project-specific agents to .claude/agents/ (e.g., kmp-reviewer.md)
+3. Add project-specific rules to .claude/rules/ (e.g., kmp.md)
 4. Rename workflow .template files to .yml and configure secrets
-5. Commit the setup: git add -A && git commit -m "Add AI-driven development templates"
+5. Commit: git add -A && git commit -m "Add AI-driven development templates"
+
+## Keeping Up to Date
+Common skills/agents/rules are synced from ai-dev-templates.
+When ai-dev-templates is updated:
+- GitHub Actions automatically creates PRs to this project
+- Or run /sync manually from the ai-dev-templates directory
 ```

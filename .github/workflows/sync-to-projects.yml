@@ -1,6 +1,7 @@
 name: Sync to projects
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:

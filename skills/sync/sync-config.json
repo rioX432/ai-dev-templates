@@ -17,7 +17,8 @@
     "dig",
     "decompose",
     "tech-debt",
-    "audit"
+    "audit",
+    "competitive-audit"
   ],
   "common_agents": [
     "security-reviewer",

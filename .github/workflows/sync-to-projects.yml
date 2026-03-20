@@ -38,7 +38,7 @@ jobs:
 
       - name: Sync common skills
         run: |
-          SKILLS="dev dev-all review pr dig decompose tech-debt audit"
+          SKILLS="dev dev-all review pr dig decompose tech-debt audit competitive-audit"
           for skill in $SKILLS; do
             if [ -f "skills/$skill/SKILL.md" ]; then
               mkdir -p "target/.claude/skills/$skill"

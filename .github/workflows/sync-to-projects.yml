@@ -68,8 +68,8 @@ jobs:
       - name: Configure git
         working-directory: target
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "rioX432"
+          git config user.email "omooooori432@gmail.com"
 
       - name: Check for changes
         id: changes

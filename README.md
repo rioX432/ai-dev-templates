@@ -40,7 +40,9 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules |
 | `/ai-dev:decompose` | Task decomposition into ordered subtasks with dependencies |
-| `/ai-dev:audit [scope]` | Codebase health audit with parallel scanners → GitHub Issues |
+| `/ai-dev:audit [scope]` | Codebase health + visual bug audit with parallel scanners → GitHub Issues |
+| `/ai-dev:competitive-audit [focus]` | Competitive analysis + UX comparison + store reviews + tech trends → GitHub Issues |
+| `/ai-dev:ux-audit [target]` | UI/UX comprehensive audit: heuristics, accessibility, visual, platform guidelines → GitHub Issues |
 | `/ai-dev:tech-debt` | Technical debt scan → GitHub Issues for high-severity findings |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
 | `/ai-dev:sync` | Sync common files to target projects |
@@ -52,6 +54,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 |---|---|---|---|
 | `security-reviewer` | sonnet | maxTurns: 20, read-only | OWASP vulnerability scanner |
 | `test-writer` | sonnet | maxTurns: 30 | Unit test generation |
+| `ui-reviewer` | sonnet | maxTurns: 20, read-only | UI/UX quality reviewer (accessibility, platform guidelines, UX patterns) |
 
 ## Hooks
 

@@ -1,5 +1,5 @@
 {
-  "description": "AI Dev plugin hooks: auto-lint, block dangerous commands, failure logging, context restoration",
+  "description": "AI Dev plugin hooks: auto-lint, block dangerous commands, block secret access, failure logging, context restoration",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,16 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-secret-access.sh",
             "timeout": 5
           }
         ]

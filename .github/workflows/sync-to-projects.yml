@@ -10,22 +10,33 @@ on:
       - 'rules/*.md'
       - 'hooks/**'
       - 'scripts/*.sh'
+      - 'layers/**'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        repo:
-          - CivitDeck
-          - live-translate
-          - vtslide
-          - KMP-FaceLink
-          - VocaDrip
-          - personal-ai-secretary
-          - kamibukuro
-          - desk-secretary-bot
-          - kakimato
+        include:
+          - repo: CivitDeck
+            layer: mobile
+          - repo: live-translate
+            layer: web
+          - repo: vtslide
+            layer: web
+          - repo: KMP-FaceLink
+            layer: mobile
+          - repo: VocaDrip
+            layer: mobile
+          - repo: personal-ai-secretary
+            layer: web
+          - repo: kamibukuro
+            layer: web
+          - repo: desk-secretary-bot
+            layer: iot
+          - repo: kakimato
+            layer: web
     steps:
       - name: Checkout ai-dev-templates
         uses: actions/checkout@v4
@@ -67,6 +78,45 @@ jobs:
             fi
           done
 
+      - name: Sync layer agents
+        run: |
+          LAYER="${{ matrix.layer }}"
+          if [ -d "layers/$LAYER/agents" ]; then
+            mkdir -p "target/.claude/agents"
+            for agent in layers/$LAYER/agents/*.md; do
+              [ -f "$agent" ] && cp "$agent" "target/.claude/agents/$(basename "$agent")"
+            done
+          fi
+
+      - name: Sync layer rules
+        run: |
+          LAYER="${{ matrix.layer }}"
+          if [ -d "layers/$LAYER/rules" ]; then
+            mkdir -p "target/.claude/rules"
+            for rule in layers/$LAYER/rules/*.md; do
+              [ -f "$rule" ] && cp "$rule" "target/.claude/rules/$(basename "$rule")"
+            done
+          fi
+
+      - name: Sync layer PR template
+        run: |
+          LAYER="${{ matrix.layer }}"
+          if [ -f "layers/$LAYER/templates/pull_request_template.md" ]; then
+            mkdir -p "target/.github"
+            cp "layers/$LAYER/templates/pull_request_template.md" "target/.github/pull_request_template.md"
+          fi
+
+      - name: Sync layer workflow templates
+        run: |
+          LAYER="${{ matrix.layer }}"
+          if [ -d "layers/$LAYER/templates" ]; then
+            for tmpl in layers/$LAYER/templates/*.yml.template; do
+              [ -f "$tmpl" ] || continue
+              mkdir -p "target/.github/workflows"
+              cp "$tmpl" "target/.github/workflows/$(basename "$tmpl")"
+            done
+          fi
+
       - name: Configure git
         working-directory: target
         run: |
@@ -86,7 +136,7 @@ jobs:
         id: changes
         working-directory: target
         run: |
-          git add .claude/
+          git add .claude/ .github/
           git diff --cached --quiet && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create PR
@@ -98,15 +148,15 @@ jobs:
           DEFAULT_BRANCH="${{ steps.default-branch.outputs.branch }}"
           BRANCH="sync/ai-dev-template-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
-          git add .claude/
-          git commit -m "Sync ai-dev-template common files"
+          git add .claude/ .github/
+          git commit -m "Sync ai-dev-template common + ${{ matrix.layer }} layer files"
           git push -u origin "$BRANCH"
           FILES=$(git diff --name-only HEAD~1)
           gh pr create \
-            --title "Sync ai-dev-template updates" \
+            --title "Sync ai-dev-template updates (${{ matrix.layer }})" \
             --body "## Description
 
-          Automated sync of common skills, agents, and rules from ai-dev-templates.
+          Automated sync of common + **${{ matrix.layer }}** layer files from ai-dev-templates.
 
           ### Updated files
           ${FILES}

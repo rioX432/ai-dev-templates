@@ -1,15 +1,15 @@
 {
-  "projects": [
-    "../CivitDeck",
-    "../live-translate",
-    "../vtslide",
-    "../KMP-FaceLink",
-    "../VocaDrip",
-    "../personal-ai-secretary",
-    "../kamibukuro",
-    "../desk-secretary-bot",
-    "../kakimato"
-  ],
+  "projects": {
+    "CivitDeck":             { "path": "../CivitDeck",             "layer": "mobile" },
+    "live-translate":        { "path": "../live-translate",        "layer": "web" },
+    "vtslide":               { "path": "../vtslide",               "layer": "web" },
+    "KMP-FaceLink":          { "path": "../KMP-FaceLink",          "layer": "mobile" },
+    "VocaDrip":              { "path": "../VocaDrip",              "layer": "mobile" },
+    "personal-ai-secretary": { "path": "../personal-ai-secretary", "layer": "web" },
+    "kamibukuro":            { "path": "../kamibukuro",            "layer": "web" },
+    "desk-secretary-bot":    { "path": "../desk-secretary-bot",    "layer": "iot" },
+    "kakimato":              { "path": "../kakimato",              "layer": "web" }
+  },
   "common_skills": [
     "dev",
     "dev-all",
@@ -29,5 +29,33 @@
     "behavior.md",
     "ai-ops.md"
   ],
-  "sync_hooks": true
+  "sync_hooks": true,
+  "layer_types": {
+    "mobile": {
+      "agents": ["ui-reviewer"],
+      "rules": ["mobile-conventions.md"],
+      "skills": [],
+      "templates": [
+        "pull_request_template.md",
+        "ci-kmp.yml.template",
+        "roborazzi.yml.template",
+        "android-emulator-test.yml.template",
+        "maestro-smoke-test.yml.template"
+      ]
+    },
+    "web": {
+      "agents": ["ui-reviewer"],
+      "rules": ["web-conventions.md"],
+      "skills": [],
+      "templates": [
+        "pull_request_template.md"
+      ]
+    },
+    "iot": {
+      "agents": [],
+      "rules": ["iot-conventions.md"],
+      "skills": [],
+      "templates": []
+    }
+  }
 }

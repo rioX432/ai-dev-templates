@@ -1,6 +1,6 @@
 ---
 name: init-project
-description: "Initialize a new project with AI-driven development templates and Plugin configuration"
+description: "Initialize a new project with AI-driven development templates and layer-specific configuration"
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "{project-path}"
@@ -10,6 +10,7 @@ allowed-tools:
   - Bash(mkdir:*)
   - Bash(cp:*)
   - Bash(ls:*)
+  - Bash(cat:*)
   - AskUserQuestion
 ---
 
@@ -25,7 +26,19 @@ Initialize a project at `$ARGUMENTS` with AI-driven development templates.
 - Check if it's a git repository (warn if not)
 - Check for existing `.claude/` directory (warn if overwriting)
 
-### 2. Copy Core Files
+### 2. Select Project Type
+
+Ask the user for the project type:
+
+→ **AskUserQuestion:** What type of project is this?
+1. **mobile** — KMP/CMP, Android, iOS
+2. **web** — TypeScript, React, Vue, Node.js, Electron
+3. **iot** — C++, Python, embedded
+4. **common-only** — no layer-specific files
+
+Store as `$PROJECT_TYPE`.
+
+### 3. Copy Core Files
 
 Copy the following from `${CLAUDE_SKILL_DIR}/templates/`:
 
@@ -36,7 +49,18 @@ Copy the following from `${CLAUDE_SKILL_DIR}/templates/`:
 | `settings.json.template` | `$ARGUMENTS/.claude/settings.json` | Copy as-is |
 | `pull_request_template.md` | `$ARGUMENTS/.github/pull_request_template.md` | Copy as-is |
 
-### 3. Copy Common Skills
+### 4. Copy Layer PR Template (if applicable)
+
+If `$PROJECT_TYPE` is not `common-only` and the layer has a `pull_request_template.md`:
+
+```bash
+LAYER_ROOT=${CLAUDE_SKILL_DIR}/../../layers/$PROJECT_TYPE
+cp $LAYER_ROOT/templates/pull_request_template.md $ARGUMENTS/.github/pull_request_template.md
+```
+
+This **replaces** the common PR template copied in Step 3.
+
+### 5. Copy Common Skills
 
 Copy shared skills from ai-dev-templates:
 
@@ -52,7 +76,7 @@ $ARGUMENTS/.claude/skills/
   audit/SKILL.md
 ```
 
-### 4. Copy Common Agents
+### 6. Copy Common Agents
 
 ```
 $ARGUMENTS/.claude/agents/
@@ -60,7 +84,7 @@ $ARGUMENTS/.claude/agents/
   test-writer.md
 ```
 
-### 5. Copy Common Rules
+### 7. Copy Common Rules
 
 ```
 $ARGUMENTS/.claude/rules/
@@ -68,18 +92,67 @@ $ARGUMENTS/.claude/rules/
   ai-ops.md
 ```
 
-### 6. Copy Workflow Templates (Optional)
+### 8. Copy Layer-Specific Files (if $PROJECT_TYPE != common-only)
 
-Ask user which workflows to include:
+Read `layer_types.$PROJECT_TYPE` from `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`.
+
+#### Layer Agents
+```bash
+for agent in layer_types.$PROJECT_TYPE.agents:
+  mkdir -p $ARGUMENTS/.claude/agents/
+  cp $LAYER_ROOT/agents/$agent.md $ARGUMENTS/.claude/agents/$agent.md
+```
+
+#### Layer Rules
+```bash
+for rule in layer_types.$PROJECT_TYPE.rules:
+  mkdir -p $ARGUMENTS/.claude/rules/
+  cp $LAYER_ROOT/rules/$rule $ARGUMENTS/.claude/rules/$rule
+```
+
+#### Layer Skills (if any)
+```bash
+for skill in layer_types.$PROJECT_TYPE.skills:
+  mkdir -p $ARGUMENTS/.claude/skills/$skill/
+  cp $LAYER_ROOT/skills/$skill/SKILL.md $ARGUMENTS/.claude/skills/$skill/SKILL.md
+```
+
+### 9. Copy Workflow Templates (Optional)
+
+Ask user which workflows to include.
+
+**Common workflows:**
 
 | Template | Description |
 |---|---|
-| `ci.yml.template` | CI pipeline |
 | `ai-ops-daily.yml.template` | Daily AI analysis |
 | `claude-code.yml.template` | Issue → PR automation |
 | `claude-review.yml.template` | Automated PR review |
 
-### 7. Post-Setup Instructions
+**Layer workflows** (from `layers/$PROJECT_TYPE/templates/*.yml.template`):
+
+For mobile:
+| Template | Description |
+|---|---|
+| `ci-kmp.yml.template` | KMP CI pipeline (Android + iOS build & test) |
+| `roborazzi.yml.template` | Roborazzi screenshot comparison on PRs |
+| `android-emulator-test.yml.template` | Android emulator instrumented tests |
+| `maestro-smoke-test.yml.template` | Maestro E2E smoke tests |
+
+Copy selected templates to `$ARGUMENTS/.github/workflows/`.
+
+### 10. Register in sync-config.json
+
+Add the new project to `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`:
+
+```json
+"projects": {
+  ...
+  "{project-name}": { "path": "{relative-path}", "layer": "{PROJECT_TYPE}" }
+}
+```
+
+### 11. Post-Setup Instructions
 
 ```
 ## Setup Complete
@@ -89,20 +162,19 @@ Files created:
 - REVIEW.md ← Customize review criteria
 - .claude/settings.json ← Add project-specific permissions
 - .claude/skills/ ← Shared skills (synced from ai-dev-templates)
-- .claude/agents/ ← Shared + add project-specific agents
-- .claude/rules/ ← Shared + add project-specific rules
-- .github/pull_request_template.md
+- .claude/agents/ ← Shared + layer ({PROJECT_TYPE}) agents
+- .claude/rules/ ← Shared + layer ({PROJECT_TYPE}) rules
+- .github/pull_request_template.md ← {PROJECT_TYPE} layer template
+- .github/workflows/ ← Selected CI templates
 
 ## Next Steps
 1. Edit CLAUDE.md — fill in project details, especially Commands section
 2. Add project-specific agents to .claude/agents/ (e.g., kmp-reviewer.md)
-3. Add project-specific rules to .claude/rules/ (e.g., kmp.md)
+3. Add project-specific rules to .claude/rules/
 4. Rename workflow .template files to .yml and configure secrets
 5. Commit: git add -A && git commit -m "Add AI-driven development templates"
 
 ## Keeping Up to Date
-Common skills/agents/rules are synced from ai-dev-templates.
-When ai-dev-templates is updated:
-- GitHub Actions automatically creates PRs to this project
-- Or run /sync manually from the ai-dev-templates directory
+Common + layer files are synced from ai-dev-templates.
+Run /sync from ai-dev-templates to update all projects.
 ```

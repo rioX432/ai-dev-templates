@@ -25,6 +25,7 @@ jobs:
           - personal-ai-secretary
           - kamibukuro
           - desk-secretary-bot
+          - kakimato
     steps:
       - name: Checkout ai-dev-templates
         uses: actions/checkout@v4

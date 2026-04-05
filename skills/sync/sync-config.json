@@ -7,7 +7,8 @@
     "../VocaDrip",
     "../personal-ai-secretary",
     "../kamibukuro",
-    "../desk-secretary-bot"
+    "../desk-secretary-bot",
+    "../kakimato"
   ],
   "common_skills": [
     "dev",

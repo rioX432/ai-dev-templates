@@ -49,6 +49,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
 | `/ai-dev:update-docs [scope]` | Documentation audit & update (architecture, changelog, readme, oss) |
 | `/ai-dev:sync` | Sync common files to target projects |
+| `/ai-dev:think <topic> [repo]` | Zero-base deep research: structured investigation → synthesis → proposal with counter-arguments |
 | `/ai-dev:init-project {path}` | Initialize a project with templates (includes Core Values + Won't Do sections) |
 
 ## Agents
@@ -58,6 +59,12 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `security-reviewer` | sonnet | maxTurns: 20, read-only | OWASP vulnerability scanner |
 | `test-writer` | sonnet | maxTurns: 30 | Unit test generation |
 | `ui-reviewer` | sonnet | maxTurns: 20, read-only | UI/UX quality reviewer (accessibility, platform guidelines, UX patterns) |
+| `repo-analyzer` | sonnet | maxTurns: 30 | GitHub repo feature/Issue/PR analysis (for /think) |
+| `deep-researcher` | sonnet | maxTurns: 20 | Web/SNS supplemental research (collector only) |
+| `case-analyzer` | sonnet | maxTurns: 20 | Individual case deep dive analysis |
+| `social-scanner` | sonnet | maxTurns: 20 | X/Reddit/HN/community sentiment scan |
+| `source-verifier` | sonnet | maxTurns: 30 | URL existence + claim consistency check |
+| `counter-argument` | sonnet | maxTurns: 15 | Proposal stress-test: counter-arguments, risks |
 
 ## Hooks
 
@@ -182,6 +189,7 @@ ai-dev-templates/
 │   │   ├── SKILL.md
 │   │   └── reference.md
 │   ├── tech-debt/SKILL.md
+│   ├── think/SKILL.md
 │   ├── update-docs/SKILL.md
 │   ├── monitor/SKILL.md
 │   ├── sync/
@@ -192,7 +200,13 @@ ai-dev-templates/
 │       └── templates/
 ├── agents/
 │   ├── security-reviewer.md
-│   └── test-writer.md
+│   ├── test-writer.md
+│   ├── repo-analyzer.md
+│   ├── deep-researcher.md
+│   ├── case-analyzer.md
+│   ├── social-scanner.md
+│   ├── source-verifier.md
+│   └── counter-argument.md
 ├── hooks/
 │   └── hooks.json
 ├── scripts/

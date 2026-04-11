@@ -110,19 +110,19 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 ```
 Plugin (language-agnostic)          Project (specific)
 ┌──────────────────────────┐    ┌──────────────────────────┐
-│ skills/ — workflow        │    │ CLAUDE.md — commands,     │
-│   dev, dev-all, review,  │    │   architecture, gotchas   │
+│ skills/ — workflow       │    │ CLAUDE.md — commands,    │
+│   dev, dev-all, review,  │    │   architecture, gotchas  │
 │   pr, dig, decompose,    │    │                          │
-│   audit, tech-debt       │    │ .claude/agents/           │
-│                          │    │   kmp-reviewer.md         │
-│ agents/ — shared         │    │   ui-reviewer.md          │
+│   audit, tech-debt       │    │ .claude/agents/          │
+│                          │    │   kmp-reviewer.md        │
+│ agents/ — shared         │    │   ui-reviewer.md         │
 │   security-reviewer      │    │                          │
-│   test-writer            │    │ .claude/rules/            │
-│                          │    │   kmp.md, android.md      │
+│   test-writer            │    │ .claude/rules/           │
+│                          │    │   kmp.md, android.md     │
 │ hooks/ — auto-lint,      │    │                          │
-│   block-dangerous,       │    │ .claude/settings.json     │
+│   block-dangerous,       │    │ .claude/settings.json    │
 │   log-failure            │    │                          │
-│                          │    │ REVIEW.md                 │
+│                          │    │ REVIEW.md                │
 │ rules/ — behavior,       │    └──────────────────────────┘
 │   ai-ops                 │
 └──────────────────────────┘

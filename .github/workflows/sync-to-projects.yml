@@ -50,8 +50,10 @@ jobs:
 
       - name: Sync common skills
         run: |
-          SKILLS="dev dev-all review pr dig decompose tech-debt audit competitive-audit"
-          for skill in $SKILLS; do
+          EXCLUDE="init-project sync"
+          for skill_dir in skills/*/; do
+            skill=$(basename "$skill_dir")
+            echo "$EXCLUDE" | grep -qw "$skill" && continue
             if [ -f "skills/$skill/SKILL.md" ]; then
               mkdir -p "target/.claude/skills/$skill"
               cp "skills/$skill/SKILL.md" "target/.claude/skills/$skill/SKILL.md"
@@ -60,22 +62,18 @@ jobs:
 
       - name: Sync common agents
         run: |
-          AGENTS="security-reviewer test-writer"
-          for agent in $AGENTS; do
-            if [ -f "agents/$agent.md" ]; then
-              mkdir -p "target/.claude/agents"
-              cp "agents/$agent.md" "target/.claude/agents/$agent.md"
-            fi
+          for agent in agents/*.md; do
+            [ -f "$agent" ] || continue
+            mkdir -p "target/.claude/agents"
+            cp "$agent" "target/.claude/agents/$(basename "$agent")"
           done
 
       - name: Sync common rules
         run: |
-          RULES="behavior.md ai-ops.md"
-          for rule in $RULES; do
-            if [ -f "rules/$rule" ]; then
-              mkdir -p "target/.claude/rules"
-              cp "rules/$rule" "target/.claude/rules/$rule"
-            fi
+          for rule in rules/*.md; do
+            [ -f "$rule" ] || continue
+            mkdir -p "target/.claude/rules"
+            cp "$rule" "target/.claude/rules/$(basename "$rule")"
           done
 
       - name: Sync layer agents

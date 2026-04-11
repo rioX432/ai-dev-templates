@@ -2,6 +2,8 @@
 
 Claude Code plugin for AI-driven development workflows. Language-agnostic harness engineering — autonomous issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring.
 
+**Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
+
 ## Install
 
 ### As Plugin (for personal use)
@@ -41,12 +43,13 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules |
 | `/ai-dev:decompose` | Task decomposition into ordered subtasks with dependencies |
 | `/ai-dev:audit [scope]` | Codebase health + visual bug audit with parallel scanners → GitHub Issues |
-| `/ai-dev:competitive-audit [focus]` | Competitive analysis + UX comparison + store reviews + tech trends → GitHub Issues |
+| `/ai-dev:competitive-audit [focus]` | Core Value-filtered competitive analysis: user pain points → max 3 issues + Won't Do recording |
 | `/ai-dev:ux-audit [target]` | UI/UX comprehensive audit: heuristics, accessibility, visual, platform guidelines → GitHub Issues |
 | `/ai-dev:tech-debt` | Technical debt scan → GitHub Issues for high-severity findings |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
+| `/ai-dev:update-docs [scope]` | Documentation audit & update (architecture, changelog, readme, oss) |
 | `/ai-dev:sync` | Sync common files to target projects |
-| `/ai-dev:init-project {path}` | Initialize a project with templates |
+| `/ai-dev:init-project {path}` | Initialize a project with templates (includes Core Values + Won't Do sections) |
 
 ## Agents
 
@@ -62,8 +65,34 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 |---|---|
 | `PostToolUse` (Write/Edit) | Auto-lint: ktlint, swiftformat, eslint, ruff, jq (language auto-detected) |
 | `PreToolUse` (Bash) | Block dangerous commands (force push, rm -rf, drop table, etc.) |
+| `PreToolUse` (Read/Edit) | Block secret file access (.env, credentials) |
 | `StopFailure` | Log failure patterns to `logs/failures/` for harness improvement |
 | `PostCompact` | Restore critical context (progress.txt) after compaction |
+
+## Feature Bloat Prevention
+
+AI-driven development can accelerate implementation speed, but without guardrails it leads to scope explosion. This plugin addresses this structurally:
+
+### Core Value Filter
+
+Each project defines **Core Values** (max 3) in its `CLAUDE.md`. Every feature proposal must pass the **one-step distance test**:
+
+> "Does this DIRECTLY strengthen a Core Value, without intermediate reasoning?"
+
+- ✅ "Translation accuracy improvement → Core Value: accurate translation" (1 step)
+- ❌ "Add meeting summary → helps users → they'll use translation more" (2+ steps)
+
+### Won't Do Registry
+
+Features explicitly decided NOT to build are recorded in `CLAUDE.md → ## Won't Do` with reasoning. This prevents:
+- Future audits from re-proposing the same rejected ideas
+- Research documents from becoming feature requests without review
+
+### Structural Constraints
+
+- **competitive-audit**: Max 3 issues per run, Core Value gate at Phase 0, user pain points as primary input (not competitor feature lists)
+- **ai-ops rule**: Research → Issue → Weekly review → Implementation (no shortcut from research to code)
+- **dev-all**: Auto-skips `won't`-labeled issues and Won't Do list entries
 
 ## Harness Engineering Design
 
@@ -74,6 +103,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **Failure-driven improvement**: `StopFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
 - **Language-agnostic**: Skills reference CLAUDE.md for project-specific commands, not hardcoded build tools
+- **Depth over breadth**: Core Value filter + Won't Do registry prevent feature factory anti-pattern
 
 ### Architecture
 
@@ -147,7 +177,12 @@ ai-dev-templates/
 │   ├── dig/SKILL.md
 │   ├── decompose/SKILL.md
 │   ├── audit/SKILL.md
+│   ├── competitive-audit/SKILL.md
+│   ├── ux-audit/
+│   │   ├── SKILL.md
+│   │   └── reference.md
 │   ├── tech-debt/SKILL.md
+│   ├── update-docs/SKILL.md
 │   ├── monitor/SKILL.md
 │   ├── sync/
 │   │   ├── SKILL.md
@@ -165,10 +200,20 @@ ai-dev-templates/
 │   ├── block-dangerous-commands.sh
 │   ├── log-failure.sh
 │   └── restore-context.sh
+├── layers/
+│   ├── mobile/
+│   │   ├── agents/ui-reviewer.md
+│   │   ├── rules/mobile-conventions.md
+│   │   └── templates/  (CI workflows)
+│   ├── web/
+│   │   ├── agents/ui-reviewer.md
+│   │   └── rules/web-conventions.md
+│   └── iot/
+│       └── rules/iot-conventions.md
 └── rules/
     ├── behavior.md
     ├── coding-conventions.md
-    └── ai-ops.md
+    └── ai-ops.md  ← Core Value guard + research gate + WIP limit
 ```
 
 ## License

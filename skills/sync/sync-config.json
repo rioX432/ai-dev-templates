@@ -32,8 +32,8 @@
   "sync_hooks": true,
   "layer_types": {
     "mobile": {
-      "agents": ["ui-reviewer"],
-      "rules": ["mobile-conventions.md", "design-personality.md"],
+      "agents": ["ui-reviewer", "perf-reviewer"],
+      "rules": ["mobile-conventions.md", "design-personality.md", "l10n-conventions.md"],
       "skills": [],
       "templates": [
         "pull_request_template.md",

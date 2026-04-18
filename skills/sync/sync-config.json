@@ -8,7 +8,7 @@
     "personal-ai-secretary": { "path": "../personal-ai-secretary", "layer": "web" },
     "kamibukuro":            { "path": "../kamibukuro",            "layer": "web" },
     "desk-secretary-bot":    { "path": "../desk-secretary-bot",    "layer": "iot" },
-    "kakimato":              { "path": "../kakimato",              "layer": "web" }
+    "kakimato":              { "path": "../kakimato",              "layer": "mobile" }
   },
   "common_skills": [
     "dev",

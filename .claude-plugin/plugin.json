@@ -1,6 +1,6 @@
 {
   "name": "ai-dev",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "AI-driven development workflow plugin — E2E issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring. Language-agnostic harness engineering.",
   "author": {
     "name": "rio"

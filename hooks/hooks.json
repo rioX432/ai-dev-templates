@@ -1,5 +1,5 @@
 {
-  "description": "AI Dev plugin hooks: auto-lint, block dangerous commands, block secret access, failure logging, context restoration",
+  "description": "AI Dev plugin hooks: auto-lint, block dangerous commands, block secret access, failure logging, context preservation (pre/post compact)",
   "hooks": {
     "PreToolUse": [
       {
@@ -42,6 +42,17 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/log-failure.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/save-context.sh",
             "timeout": 5
           }
         ]

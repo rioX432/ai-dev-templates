@@ -74,6 +74,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `PreToolUse` (Bash) | Block dangerous commands (force push, rm -rf, drop table, etc.) |
 | `PreToolUse` (Read/Edit) | Block secret file access (.env, credentials) |
 | `StopFailure` | Log failure patterns to `logs/failures/` for harness improvement |
+| `PreCompact` | Save critical context (branch, changed files, progress) before compaction |
 | `PostCompact` | Restore critical context (progress.txt) after compaction |
 
 ## Feature Bloat Prevention

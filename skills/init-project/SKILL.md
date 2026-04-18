@@ -169,10 +169,11 @@ Files created:
 
 ## Next Steps
 1. Edit CLAUDE.md — fill in project details, especially Commands section
-2. Add project-specific agents to .claude/agents/ (e.g., kmp-reviewer.md)
-3. Add project-specific rules to .claude/rules/
-4. Rename workflow .template files to .yml and configure secrets
-5. Commit: git add -A && git commit -m "Add AI-driven development templates"
+2. **Define design tokens** — choose brand font, accent color, and review design-personality.md
+3. Add project-specific agents to .claude/agents/ (e.g., kmp-reviewer.md)
+4. Add project-specific rules to .claude/rules/
+5. Rename workflow .template files to .yml and configure secrets
+6. Commit: git add -A && git commit -m "Add AI-driven development templates"
 
 ## Keeping Up to Date
 Common + layer files are synced from ai-dev-templates.

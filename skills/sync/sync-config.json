@@ -33,7 +33,7 @@
   "layer_types": {
     "mobile": {
       "agents": ["ui-reviewer"],
-      "rules": ["mobile-conventions.md"],
+      "rules": ["mobile-conventions.md", "design-personality.md"],
       "skills": [],
       "templates": [
         "pull_request_template.md",

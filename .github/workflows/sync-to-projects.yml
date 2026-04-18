@@ -37,6 +37,8 @@ jobs:
             layer: iot
           - repo: kakimato
             layer: mobile
+          - repo: viral-loc-monorepo
+            layer: mobile
     steps:
       - name: Checkout ai-dev-templates
         uses: actions/checkout@v4

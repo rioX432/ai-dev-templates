@@ -36,7 +36,7 @@ jobs:
           - repo: desk-secretary-bot
             layer: iot
           - repo: kakimato
-            layer: web
+            layer: mobile
     steps:
       - name: Checkout ai-dev-templates
         uses: actions/checkout@v4

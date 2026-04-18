@@ -58,7 +58,8 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 |---|---|---|---|
 | `security-reviewer` | sonnet | maxTurns: 20, read-only | OWASP vulnerability scanner |
 | `test-writer` | sonnet | maxTurns: 30 | Unit test generation |
-| `ui-reviewer` | sonnet | maxTurns: 20, read-only | UI/UX quality reviewer (accessibility, platform guidelines, UX patterns) |
+| `ui-reviewer` | sonnet | maxTurns: 20, read-only | UI/UX quality reviewer (accessibility, platform guidelines, design personality) |
+| `perf-reviewer` | sonnet | maxTurns: 20, read-only | Compose/CMP performance reviewer (recomposition, lazy layout, main thread, memory) |
 | `repo-analyzer` | sonnet | maxTurns: 30 | GitHub repo feature/Issue/PR analysis (for /think) |
 | `deep-researcher` | sonnet | maxTurns: 20 | Web/SNS supplemental research (collector only) |
 | `case-analyzer` | sonnet | maxTurns: 20 | Individual case deep dive analysis |
@@ -217,8 +218,13 @@ ai-dev-templates/
 │   └── restore-context.sh
 ├── layers/
 │   ├── mobile/
-│   │   ├── agents/ui-reviewer.md
-│   │   ├── rules/mobile-conventions.md
+│   │   ├── agents/
+│   │   │   ├── ui-reviewer.md
+│   │   │   └── perf-reviewer.md
+│   │   ├── rules/
+│   │   │   ├── mobile-conventions.md
+│   │   │   ├── design-personality.md
+│   │   │   └── l10n-conventions.md
 │   │   └── templates/  (CI workflows)
 │   ├── web/
 │   │   ├── agents/ui-reviewer.md

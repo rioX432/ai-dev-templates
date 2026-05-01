@@ -36,7 +36,7 @@ jobs:
           - repo: desk-secretary-bot
             layer: iot
           - repo: kakimato
-            layer: mobile
+            layer: react-native
           - repo: viral-loc-monorepo
             layer: mobile
     steps:

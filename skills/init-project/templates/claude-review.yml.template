@@ -26,7 +26,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
+          prompt: |
             Review this pull request using the following checklist:
 
             1. Architecture & Design — SRP, follows project conventions, no unnecessary complexity

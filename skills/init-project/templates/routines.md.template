@@ -1,0 +1,65 @@
+# Routines Configuration Guide
+
+Claude Code Routines run on Anthropic's cloud infrastructure (no local machine required).
+Configure these via claude.ai/code/routines or the Desktop app.
+
+## Recommended Routines
+
+### 1. Daily PR Triage
+
+- **Schedule:** Weekdays 09:00 JST
+- **Prompt:**
+  ```
+  Review all open PRs. For each:
+  1. Check if CI has passed
+  2. Flag PRs with no reviewer assigned
+  3. Flag PRs open > 3 days with no activity
+  Post a summary as a GitHub Issue comment or create a triage issue.
+  ```
+
+### 2. Weekly Dependency Scan
+
+- **Schedule:** Monday 10:00 JST
+- **Prompt:**
+  ```
+  Check for outdated dependencies and known vulnerabilities.
+  Create a GitHub Issue titled "Weekly Dependency Report - {date}" with:
+  - Dependencies with available updates (major/minor/patch)
+  - Known CVEs in current dependency tree
+  - Recommended priority order for updates
+  ```
+
+### 3. Weekly Security Audit
+
+- **Schedule:** Wednesday 10:00 JST
+- **Prompt:**
+  ```
+  Run a security review of all changes merged in the past 7 days.
+  Focus on OWASP Top 10 and any hardcoded secrets.
+  Create a GitHub Issue if findings exist, labeled "security".
+  ```
+
+### 4. Daily Stale Branch Cleanup
+
+- **Schedule:** Daily 22:00 JST
+- **Prompt:**
+  ```
+  List branches with no commits in the past 30 days that are fully merged into main.
+  Create a single PR that deletes these stale branches.
+  Exclude: main, master, develop, release/*.
+  ```
+
+## Environment Setup
+
+Each routine needs:
+- **Repository:** Select the target repo (cloned fresh each run)
+- **Network:** "Trusted" is sufficient for most routines
+- **Connectors:** Add Slack MCP if you want notifications
+
+## Limitations
+
+- Fresh clone each run — no local state persists
+- Push only to `claude/*` branches by default
+- Daily caps: Pro 5/day, Max 15/day, Team 25/day
+- No access to local .env or private network services
+- GitHub-only for push (GitLab/Bitbucket read-only via bundle)

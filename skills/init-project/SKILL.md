@@ -141,7 +141,16 @@ For mobile:
 
 Copy selected templates to `$ARGUMENTS/.github/workflows/`.
 
-### 10. Register in sync-config.json
+### 10. Copy Routines Guide (Optional)
+
+Ask user if they want to set up Claude Code Routines (cloud-based scheduled agents):
+
+If yes:
+```bash
+cp ${CLAUDE_SKILL_DIR}/templates/routines.md.template $ARGUMENTS/docs/routines.md
+```
+
+### 11. Register in sync-config.json
 
 Add the new project to `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`:
 
@@ -152,7 +161,7 @@ Add the new project to `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`:
 }
 ```
 
-### 11. Post-Setup Instructions
+### 12. Post-Setup Instructions
 
 ```
 ## Setup Complete
@@ -174,6 +183,8 @@ Files created:
 4. Add project-specific rules to .claude/rules/
 5. Rename workflow .template files to .yml and configure secrets
 6. Commit: git add -A && git commit -m "Add AI-driven development templates"
+
+7. **Set up Routines** — configure cloud-based scheduled agents at claude.ai/code/routines (see docs/routines.md)
 
 ## Keeping Up to Date
 Common + layer files are synced from ai-dev-templates.

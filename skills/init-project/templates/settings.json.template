@@ -55,5 +55,13 @@
   },
   "preferences": {
     "attribution": false
+  },
+  "autoMode": {
+    "hard_deny": [
+      "Never delete production databases or run DROP TABLE",
+      "Never force push to main or master",
+      "Never modify .env files or commit secrets",
+      "Never run rm -rf on project root or home directory"
+    ]
   }
 }

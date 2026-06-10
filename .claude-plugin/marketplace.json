@@ -10,8 +10,8 @@
     {
       "name": "ai-dev",
       "source": "./",
-      "description": "E2E issue resolution, multi-agent review, PR creation, tech debt scanning — language-agnostic",
-      "version": "2.0.0"
+      "description": "E2E issue resolution, Codex-assisted design, multi-agent review, context-isolated investigation — language-agnostic harness engineering",
+      "version": "3.0.0"
     }
   ]
 }

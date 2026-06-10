@@ -1,11 +1,22 @@
 # Routines Configuration Guide
 
 Claude Code Routines run on Anthropic's cloud infrastructure (no local machine required).
-Configure these via claude.ai/code/routines or the Desktop app.
+Configure via `claude.ai/code/routines`, Desktop app sidebar, or CLI `/schedule`.
+
+## Trigger Types
+
+| Type | Use case | Setup |
+|------|----------|-------|
+| **Schedule** | Recurring tasks (min 1 hour interval) | Preset or cron expression |
+| **One-off** | Run once at a specific time | `/schedule run X tomorrow at 9am` |
+| **API** | External alerts, webhooks | HTTP POST with bearer token |
+| **GitHub event** | PR opened, release published | Filter by author, branch, labels |
 
 ## Recommended Routines
 
-### 1. Daily PR Triage
+### Scheduled
+
+#### 1. Daily PR Triage
 
 - **Schedule:** Weekdays 09:00 JST
 - **Prompt:**
@@ -17,7 +28,7 @@ Configure these via claude.ai/code/routines or the Desktop app.
   Post a summary as a GitHub Issue comment or create a triage issue.
   ```
 
-### 2. Weekly Dependency Scan
+#### 2. Weekly Dependency Scan
 
 - **Schedule:** Monday 10:00 JST
 - **Prompt:**
@@ -29,7 +40,7 @@ Configure these via claude.ai/code/routines or the Desktop app.
   - Recommended priority order for updates
   ```
 
-### 3. Weekly Security Audit
+#### 3. Weekly Security Audit
 
 - **Schedule:** Wednesday 10:00 JST
 - **Prompt:**
@@ -39,7 +50,7 @@ Configure these via claude.ai/code/routines or the Desktop app.
   Create a GitHub Issue if findings exist, labeled "security".
   ```
 
-### 4. Daily Stale Branch Cleanup
+#### 4. Daily Stale Branch Cleanup
 
 - **Schedule:** Daily 22:00 JST
 - **Prompt:**
@@ -49,17 +60,87 @@ Configure these via claude.ai/code/routines or the Desktop app.
   Exclude: main, master, develop, release/*.
   ```
 
+#### 5. Weekly Docs Drift Check
+
+- **Schedule:** Friday 17:00 JST
+- **Prompt:**
+  ```
+  Compare merged PRs from the past 7 days against README.md and ARCHITECTURE.md.
+  For each PR that changed public APIs, check if docs reflect the change.
+  Create a GitHub Issue listing stale sections with links to the PRs that caused drift.
+  ```
+
+### GitHub Event Triggered
+
+#### 6. PR Auto-Review
+
+- **Trigger:** Pull request opened (exclude author: bot)
+- **Prompt:**
+  ```
+  Review this PR for bugs, security issues, and code quality.
+  Post inline review comments on specific lines.
+  Approve if no issues found, or request changes with clear descriptions.
+  Follow the project's REVIEW.md checklist if it exists.
+  ```
+
+#### 7. CI Failure Auto-Fix
+
+- **Trigger:** Pull request (label: `ci-fix-requested`)
+- **Prompt:**
+  ```
+  The CI for this PR has failed. Investigate the failure:
+  1. Read the CI logs
+  2. Identify the root cause (build error, test failure, lint violation)
+  3. Push a fix commit to this PR's branch
+  4. If unable to fix, add a comment explaining the failure and what was tried.
+  ```
+- **Branch permissions:** Allow unrestricted branch pushes
+
+### API Triggered
+
+#### 8. Alert Triage
+
+- **Trigger:** API (connect to alerting system)
+- **Prompt:**
+  ```
+  An alert has fired. The alert context is provided below.
+  1. Correlate the error with recent commits (git log past 48 hours)
+  2. Identify the likely root cause
+  3. If a clear fix exists, create a PR with the fix
+  4. Otherwise, create a GitHub Issue with analysis and recommended next steps
+  ```
+- **API call example:**
+  ```bash
+  curl -X POST https://api.anthropic.com/v1/claude_code/routines/{id}/fire \
+    -H "Authorization: Bearer {token}" \
+    -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+    -H "anthropic-version: 2023-06-01" \
+    -d '{"text": "500 errors spiked 10x on /api/auth endpoint"}'
+  ```
+
 ## Environment Setup
 
 Each routine needs:
 - **Repository:** Select the target repo (cloned fresh each run)
 - **Network:** "Trusted" is sufficient for most routines
 - **Connectors:** Add Slack MCP if you want notifications
+- **Setup script:** Install dependencies (cached between runs)
+- **Env vars:** API keys or secrets needed by the routine
+
+## CLI Management
+
+```bash
+/schedule                     # Interactive routine creation
+/schedule list                # List all routines
+/schedule run <name>          # Trigger immediately
+/schedule update              # Edit existing routine
+/schedule delete <name>       # Remove routine
+```
 
 ## Limitations
 
 - Fresh clone each run — no local state persists
-- Push only to `claude/*` branches by default
-- Daily caps: Pro 5/day, Max 15/day, Team 25/day
+- Push only to `claude/*` branches by default (configurable per routine)
+- Minimum schedule interval: 1 hour
 - No access to local .env or private network services
 - GitHub-only for push (GitLab/Bitbucket read-only via bundle)

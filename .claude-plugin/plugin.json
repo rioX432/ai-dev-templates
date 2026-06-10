@@ -1,7 +1,7 @@
 {
   "name": "ai-dev",
-  "version": "2.2.0",
-  "description": "AI-driven development workflow plugin — E2E issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring. Language-agnostic harness engineering.",
+  "version": "3.0.0",
+  "description": "AI-driven development workflow plugin — E2E issue resolution, multi-agent code review, zero-base research orchestration, PR creation, tech debt scanning, and KPI monitoring. Language-agnostic harness engineering with Codex MCP design verification.",
   "author": {
     "name": "rio"
   },
@@ -17,7 +17,13 @@
   ],
   "agents": [
     "./agents/security-reviewer.md",
-    "./agents/test-writer.md"
+    "./agents/test-writer.md",
+    "./agents/repo-analyzer.md",
+    "./agents/deep-researcher.md",
+    "./agents/case-analyzer.md",
+    "./agents/social-scanner.md",
+    "./agents/source-verifier.md",
+    "./agents/counter-argument.md"
   ],
   "hooks": "./hooks/hooks.json"
 }

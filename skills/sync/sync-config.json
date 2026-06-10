@@ -8,7 +8,7 @@
     "personal-ai-secretary": { "path": "../personal-ai-secretary", "layer": "web" },
     "kamibukuro":            { "path": "../kamibukuro",            "layer": "web" },
     "desk-secretary-bot":    { "path": "../desk-secretary-bot",    "layer": "iot" },
-    "kakimato":              { "path": "../kakimato",              "layer": "mobile" },
+    "kakimato":              { "path": "../kakimato",              "layer": "react-native" },
     "viral-loc-monorepo":    { "path": "../viral-loc-monorepo",    "layer": "mobile" }
   },
   "common_skills": [
@@ -20,7 +20,8 @@
     "decompose",
     "tech-debt",
     "audit",
-    "competitive-audit"
+    "competitive-audit",
+    "investigate"
   ],
   "common_agents": [
     "security-reviewer",
@@ -57,6 +58,14 @@
       "rules": ["iot-conventions.md"],
       "skills": [],
       "templates": []
+    },
+    "react-native": {
+      "agents": ["ui-reviewer", "perf-reviewer"],
+      "rules": ["mobile-conventions.md", "design-personality.md", "l10n-conventions.md"],
+      "skills": [],
+      "templates": [
+        "pull_request_template.md"
+      ]
     }
   }
 }

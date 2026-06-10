@@ -1,8 +1,14 @@
 # ai-dev
 
-Claude Code plugin for AI-driven development workflows. Language-agnostic harness engineering — autonomous issue resolution, multi-agent code review, PR creation, tech debt scanning, and KPI monitoring.
+Claude Code plugin for AI-driven development workflows. Language-agnostic harness engineering — autonomous issue resolution, Codex-assisted technical design, context-isolated investigation, multi-agent code review, and structured review gating.
 
 **Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
+
+**v3.0 highlights:**
+- **Codex integration**: Technical design verification via Codex MCP in `/dev`, `/dig`, `/decompose` (optional, with fallback)
+- **Context isolation**: `/dev-investigate` runs in a forked context, keeping investigation token costs out of the main session
+- **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
+- **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
 
 ## Install
 
@@ -36,12 +42,13 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 
 | Skill | Description |
 |---|---|
-| `/ai-dev:dev {issue}` | E2E: investigate → dig → decompose → implement → test → review → PR |
-| `/ai-dev:dev-all [issues]` | Sequential issue processing: /dev per issue → CI wait → merge → next |
+| `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
+| `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue via /goal → review validation → conditional merge |
+| `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
-| `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules |
-| `/ai-dev:decompose` | Task decomposition into ordered subtasks with dependencies |
+| `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
+| `/ai-dev:decompose` | Task decomposition into ordered subtasks + Codex architecture validation |
 | `/ai-dev:audit [scope]` | Codebase health + visual bug audit with parallel scanners → GitHub Issues |
 | `/ai-dev:competitive-audit [focus]` | Core Value-filtered competitive analysis: user pain points → max 3 issues + Won't Do recording |
 | `/ai-dev:ux-audit [target]` | UI/UX comprehensive audit: heuristics, accessibility, visual, platform guidelines → GitHub Issues |
@@ -74,9 +81,14 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `PostToolUse` (Write/Edit) | Auto-lint: ktlint, swiftformat, eslint, ruff, jq (language auto-detected) |
 | `PreToolUse` (Bash) | Block dangerous commands (force push, rm -rf, drop table, etc.) |
 | `PreToolUse` (Read/Edit) | Block secret file access (.env, credentials) |
-| `StopFailure` | Log failure patterns to `logs/failures/` for harness improvement |
+| `PostToolUseFailure` | Log failure patterns to `logs/failures/` for harness improvement |
 | `PreCompact` | Save critical context (branch, changed files, progress) before compaction |
 | `PostCompact` | Restore critical context (progress.txt) after compaction |
+| `SessionStart` | Restore context at session start (handles post-compaction recovery) |
+| `SubagentStart` | Log subagent lifecycle to `logs/subagents/` (JSONL) |
+| `SubagentStop` | Log subagent completion with result summary |
+| `TaskCompleted` | Log task completion events |
+| `SessionEnd` | Session cleanup and final logging |
 
 ## Feature Bloat Prevention
 
@@ -108,8 +120,9 @@ Features explicitly decided NOT to build are recorded in `CLAUDE.md → ## Won't
 This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-adoption-journey) principles:
 
 - **Deterministic feedback loops**: Hooks provide millisecond-level lint/format feedback — not dependent on LLM judgment
-- **Context efficiency**: Skills are on-demand (loaded only when invoked), sub-agents provide context firewalls
-- **Failure-driven improvement**: `StopFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
+- **Context efficiency**: Skills are on-demand (loaded only when invoked), `context: fork` isolates token-heavy investigation, sub-agents provide context firewalls
+- **Dual-model design**: Codex handles technical design exploration; Claude handles implementation, review, and codebase consistency — each model used for its strength
+- **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
 - **Language-agnostic**: Skills reference CLAUDE.md for project-specific commands, not hardcoded build tools
 - **Depth over breadth**: Core Value filter + Won't Do registry prevent feature factory anti-pattern
@@ -120,20 +133,21 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 Plugin (language-agnostic)          Project (specific)
 ┌──────────────────────────┐    ┌──────────────────────────┐
 │ skills/ — workflow       │    │ CLAUDE.md — commands,    │
-│   dev, dev-all, review,  │    │   architecture, gotchas  │
-│   pr, dig, decompose,    │    │                          │
-│   audit, tech-debt       │    │ .claude/agents/          │
+│   dev, dev-investigate,  │    │   architecture, gotchas  │
+│   dev-all, review, pr,   │    │                          │
+│   dig, decompose, audit  │    │ .claude/agents/          │
 │                          │    │   kmp-reviewer.md        │
-│ agents/ — shared         │    │   ui-reviewer.md         │
-│   security-reviewer      │    │                          │
-│   test-writer            │    │ .claude/rules/           │
+│ agents/ — shared (8)     │    │   ui-reviewer.md         │
+│   security-reviewer,     │    │                          │
+│   test-writer, ...       │    │ .claude/rules/           │
 │                          │    │   kmp.md, android.md     │
 │ hooks/ — auto-lint,      │    │                          │
 │   block-dangerous,       │    │ .claude/settings.json    │
-│   log-failure            │    │                          │
-│                          │    │ REVIEW.md                │
-│ rules/ — behavior,       │    └──────────────────────────┘
-│   ai-ops                 │
+│   log-failure,           │    │                          │
+│   log-subagent           │    │ REVIEW.md                │
+│                          │    └──────────────────────────┘
+│ rules/ — behavior,       │
+│   ai-ops, coding-conv    │
 └──────────────────────────┘
 ```
 
@@ -142,13 +156,14 @@ Plugin (language-agnostic)          Project (specific)
 ```
 /ai-dev:dev #42
     ├─ Phase 1: Issue Understanding (GitHub / Linear / Figma)
-    ├─ Phase 2: Investigation (Explore subagent)
-    ├─ Phase 3: Ambiguity Resolution (/dig)
-    ├─ Phase 4: Task Decomposition (/decompose)
+    ├─ Phase 2: Investigation (/dev-investigate, context: fork)
+    ├─ Phase 2.5: Technical Design (Codex MCP, optional)
+    ├─ Phase 3: Ambiguity Resolution (/dig + Codex design review)
+    ├─ Phase 4: Task Decomposition (/decompose + Codex validation)
     ├─ ── User confirms approach ──
     ├─ Phase 5: Branch & Implement (subtask loop)
     ├─ Phase 6: Quality Gate (build/test/lint from CLAUDE.md)
-    ├─ Phase 7: Review (/review — multi-agent parallel)
+    ├─ Phase 7: Review (/review → review.json artifact)
     ├─ ── User confirms commit ──
     └─ Phase 8: Commit & PR
 ```
@@ -161,10 +176,10 @@ Plugin (language-agnostic)          Project (specific)
     ├─ Step 2: Parallel investigation (Explore agents)
     ├─ ── User confirms execution plan ──
     └─ Step 3: Sequential loop
-        ├─ /dev #42 (isolated sub-agent + worktree)
-        ├─ CI wait → auto-merge
+        ├─ /dev #42 (autonomous via /goal, worktree isolation)
+        ├─ Review validation (review.json: critical→skip, warning→ask)
+        ├─ CI wait → conditional auto-merge
         ├─ /dev #43 (fresh context, latest main)
-        ├─ CI wait → auto-merge
         └─ ...
 ```
 
@@ -180,6 +195,7 @@ ai-dev-templates/
 │       └── sync-to-projects.yml
 ├── skills/
 │   ├── dev/SKILL.md
+│   ├── dev-investigate/SKILL.md  ← context: fork investigation
 │   ├── dev-all/SKILL.md
 │   ├── review/SKILL.md
 │   ├── pr/SKILL.md
@@ -214,7 +230,10 @@ ai-dev-templates/
 ├── scripts/
 │   ├── auto-lint.sh
 │   ├── block-dangerous-commands.sh
+│   ├── block-secret-access.sh
 │   ├── log-failure.sh
+│   ├── log-subagent.sh           ← lifecycle event logger
+│   ├── save-context.sh
 │   └── restore-context.sh
 ├── layers/
 │   ├── mobile/
@@ -232,9 +251,9 @@ ai-dev-templates/
 │   └── iot/
 │       └── rules/iot-conventions.md
 └── rules/
-    ├── behavior.md
+    ├── behavior.md              ← No Guessing + Codex MCP usage
     ├── coding-conventions.md
-    └── ai-ops.md  ← Core Value guard + research gate + WIP limit
+    └── ai-ops.md                ← Core Value guard + Codex conditions + WIP limit
 ```
 
 ## License

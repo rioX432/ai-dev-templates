@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Restore important context after compaction
-# Called as PostCompact hook
+# Restore important context after compaction or at session start
+# Called as PostCompact / SessionStart hook
 #
 # Injects critical information that should survive context compression.
-# Returns JSON with a message to be added to the conversation.
+# Outputs standard hook JSON via jq for proper escaping.
 
 set -euo pipefail
 
 # Check for progress.txt (used during long tasks)
 if [ -f "progress.txt" ]; then
-  PROGRESS=$(cat progress.txt | head -20)
-  echo "{\"result\":\"Context restored. Current progress:\\n$PROGRESS\"}"
+  PROGRESS=$(head -20 progress.txt)
+  jq -n --arg msg "Context restored. Current progress:
+$PROGRESS" '{"additionalContext": $msg}'
   exit 0
 fi
 

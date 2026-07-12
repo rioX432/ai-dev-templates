@@ -31,12 +31,13 @@ Initialize a project at `$ARGUMENTS` with AI-driven development templates.
 Ask the user for the project type:
 
 → **AskUserQuestion:** What type of project is this?
-1. **mobile** — KMP/CMP, Android, iOS
-2. **web** — TypeScript, React, Vue, Node.js, Electron
-3. **iot** — C++, Python, embedded
-4. **common-only** — no layer-specific files
+1. **kmp** — KMP/CMP, Android, iOS
+2. **react-native** — React Native, Expo
+3. **web** — TypeScript, React, Vue, Node.js, Electron
+4. **iot** — C++, Python, embedded
+5. **common-only** — no layer-specific files
 
-Store as `$PROJECT_TYPE`.
+Store the corresponding layer list as `$PROJECT_LAYERS` (currently one layer per type; the list form allows composing layers later — see `layers/README.md`).
 
 ### 3. Copy Core Files
 
@@ -51,14 +52,14 @@ Copy the following from `${CLAUDE_SKILL_DIR}/templates/`:
 
 ### 4. Copy Layer PR Template (if applicable)
 
-If `$PROJECT_TYPE` is not `common-only` and the layer has a `pull_request_template.md`:
+If `$PROJECT_LAYERS` is not empty, for each layer in order that has a `pull_request_template.md`:
 
 ```bash
-LAYER_ROOT=${CLAUDE_SKILL_DIR}/../../layers/$PROJECT_TYPE
+LAYER_ROOT=${CLAUDE_SKILL_DIR}/../../layers/$LAYER
 cp $LAYER_ROOT/templates/pull_request_template.md $ARGUMENTS/.github/pull_request_template.md
 ```
 
-This **replaces** the common PR template copied in Step 3.
+This **replaces** the common PR template copied in Step 3 (later layers override earlier ones).
 
 ### 5. Copy Common Skills
 
@@ -92,27 +93,27 @@ $ARGUMENTS/.claude/rules/
   ai-ops.md
 ```
 
-### 8. Copy Layer-Specific Files (if $PROJECT_TYPE != common-only)
+### 8. Copy Layer-Specific Files (if $PROJECT_LAYERS is not empty)
 
-Read `layer_types.$PROJECT_TYPE` from `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`.
+For each `$LAYER` in `$PROJECT_LAYERS` (in order), read `layer_types.$LAYER` from `${CLAUDE_SKILL_DIR}/../sync/sync-config.json` and set `LAYER_ROOT=${CLAUDE_SKILL_DIR}/../../layers/$LAYER`.
 
 #### Layer Agents
 ```bash
-for agent in layer_types.$PROJECT_TYPE.agents:
+for agent in layer_types.$LAYER.agents:
   mkdir -p $ARGUMENTS/.claude/agents/
   cp $LAYER_ROOT/agents/$agent.md $ARGUMENTS/.claude/agents/$agent.md
 ```
 
 #### Layer Rules
 ```bash
-for rule in layer_types.$PROJECT_TYPE.rules:
+for rule in layer_types.$LAYER.rules:
   mkdir -p $ARGUMENTS/.claude/rules/
   cp $LAYER_ROOT/rules/$rule $ARGUMENTS/.claude/rules/$rule
 ```
 
 #### Layer Skills (if any)
 ```bash
-for skill in layer_types.$PROJECT_TYPE.skills:
+for skill in layer_types.$LAYER.skills:
   mkdir -p $ARGUMENTS/.claude/skills/$skill/
   cp $LAYER_ROOT/skills/$skill/SKILL.md $ARGUMENTS/.claude/skills/$skill/SKILL.md
 ```
@@ -129,9 +130,9 @@ Ask user which workflows to include.
 | `claude-code.yml.template` | Issue → PR automation |
 | `claude-review.yml.template` | Automated PR review |
 
-**Layer workflows** (from `layers/$PROJECT_TYPE/templates/*.yml.template`):
+**Layer workflows** (from `layers/$LAYER/templates/*.yml.template`, for each layer in `$PROJECT_LAYERS`):
 
-For mobile:
+For kmp:
 | Template | Description |
 |---|---|
 | `ci-kmp.yml.template` | KMP CI pipeline (Android + iOS build & test) |
@@ -157,9 +158,11 @@ Add the new project to `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`:
 ```json
 "projects": {
   ...
-  "{project-name}": { "path": "{relative-path}", "layer": "{PROJECT_TYPE}" }
+  "{project-name}": { "path": "{relative-path}", "layers": ["{LAYER}", ...] }
 }
 ```
+
+Also add a matching matrix entry (`repo` + space-separated `layers`) to `.github/workflows/sync-to-projects.yml` so CI distribution covers the new project.
 
 ### 12. Post-Setup Instructions
 
@@ -171,9 +174,9 @@ Files created:
 - REVIEW.md ← Customize review criteria
 - .claude/settings.json ← Add project-specific permissions
 - .claude/skills/ ← Shared skills (synced from ai-dev-templates)
-- .claude/agents/ ← Shared + layer ({PROJECT_TYPE}) agents
-- .claude/rules/ ← Shared + layer ({PROJECT_TYPE}) rules
-- .github/pull_request_template.md ← {PROJECT_TYPE} layer template
+- .claude/agents/ ← Shared + layer ({PROJECT_LAYERS}) agents
+- .claude/rules/ ← Shared + layer ({PROJECT_LAYERS}) rules
+- .github/pull_request_template.md ← {PROJECT_LAYERS} layer template
 - .github/workflows/ ← Selected CI templates
 
 ## Next Steps

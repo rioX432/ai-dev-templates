@@ -1,15 +1,65 @@
 {
   "projects": {
-    "CivitDeck":             { "path": "../CivitDeck",             "layer": "mobile" },
-    "live-translate":        { "path": "../live-translate",        "layer": "web" },
-    "vtslide":               { "path": "../vtslide",               "layer": "web" },
-    "KMP-FaceLink":          { "path": "../KMP-FaceLink",          "layer": "mobile" },
-    "VocaDrip":              { "path": "../VocaDrip",              "layer": "mobile" },
-    "personal-ai-secretary": { "path": "../personal-ai-secretary", "layer": "web" },
-    "kamibukuro":            { "path": "../kamibukuro",            "layer": "web" },
-    "desk-secretary-bot":    { "path": "../desk-secretary-bot",    "layer": "iot" },
-    "kakimato":              { "path": "../kakimato",              "layer": "react-native" },
-    "viral-loc-monorepo":    { "path": "../viral-loc-monorepo",    "layer": "mobile" }
+    "CivitDeck": {
+      "path": "../CivitDeck",
+      "layers": [
+        "kmp"
+      ]
+    },
+    "live-translate": {
+      "path": "../live-translate",
+      "layers": [
+        "web"
+      ]
+    },
+    "vtslide": {
+      "path": "../vtslide",
+      "layers": [
+        "web"
+      ]
+    },
+    "KMP-FaceLink": {
+      "path": "../KMP-FaceLink",
+      "layers": [
+        "kmp"
+      ]
+    },
+    "VocaDrip": {
+      "path": "../VocaDrip",
+      "layers": [
+        "kmp"
+      ]
+    },
+    "personal-ai-secretary": {
+      "path": "../personal-ai-secretary",
+      "layers": [
+        "web"
+      ]
+    },
+    "kamibukuro": {
+      "path": "../kamibukuro",
+      "layers": [
+        "web"
+      ]
+    },
+    "desk-secretary-bot": {
+      "path": "../desk-secretary-bot",
+      "layers": [
+        "iot"
+      ]
+    },
+    "kakimato": {
+      "path": "../kakimato",
+      "layers": [
+        "react-native"
+      ]
+    },
+    "viral-loc-monorepo": {
+      "path": "../viral-loc-monorepo",
+      "layers": [
+        "kmp"
+      ]
+    }
   },
   "common_skills": [
     "dev",
@@ -33,9 +83,16 @@
   ],
   "sync_hooks": true,
   "layer_types": {
-    "mobile": {
-      "agents": ["ui-reviewer", "perf-reviewer"],
-      "rules": ["mobile-conventions.md", "design-personality.md", "l10n-conventions.md"],
+    "kmp": {
+      "agents": [
+        "ui-reviewer",
+        "perf-reviewer"
+      ],
+      "rules": [
+        "mobile-conventions.md",
+        "design-personality.md",
+        "l10n-conventions.md"
+      ],
       "skills": [],
       "templates": [
         "pull_request_template.md",
@@ -46,8 +103,12 @@
       ]
     },
     "web": {
-      "agents": ["ui-reviewer"],
-      "rules": ["web-conventions.md"],
+      "agents": [
+        "ui-reviewer"
+      ],
+      "rules": [
+        "web-conventions.md"
+      ],
       "skills": [],
       "templates": [
         "pull_request_template.md"
@@ -55,13 +116,22 @@
     },
     "iot": {
       "agents": [],
-      "rules": ["iot-conventions.md"],
+      "rules": [
+        "iot-conventions.md"
+      ],
       "skills": [],
       "templates": []
     },
     "react-native": {
-      "agents": ["ui-reviewer", "perf-reviewer"],
-      "rules": ["mobile-conventions.md", "design-personality.md", "l10n-conventions.md"],
+      "agents": [
+        "ui-reviewer",
+        "perf-reviewer"
+      ],
+      "rules": [
+        "mobile-conventions.md",
+        "design-personality.md",
+        "l10n-conventions.md"
+      ],
       "skills": [],
       "templates": [
         "pull_request_template.md"

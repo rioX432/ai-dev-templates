@@ -18,27 +18,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # layers: space-separated, applied in order (later layers override
+        # earlier ones on filename collision). Keep in sync with
+        # skills/sync/sync-config.json.
         include:
           - repo: CivitDeck
-            layer: mobile
+            layers: kmp
           - repo: live-translate
-            layer: web
+            layers: web
           - repo: vtslide
-            layer: web
+            layers: web
           - repo: KMP-FaceLink
-            layer: mobile
+            layers: kmp
           - repo: VocaDrip
-            layer: mobile
+            layers: kmp
           - repo: personal-ai-secretary
-            layer: web
+            layers: web
           - repo: kamibukuro
-            layer: web
+            layers: web
           - repo: desk-secretary-bot
-            layer: iot
+            layers: iot
           - repo: kakimato
-            layer: react-native
+            layers: react-native
           - repo: viral-loc-monorepo
-            layer: mobile
+            layers: kmp
     steps:
       - name: Checkout ai-dev-templates
         uses: actions/checkout@v4
@@ -80,42 +83,46 @@ jobs:
 
       - name: Sync layer agents
         run: |
-          LAYER="${{ matrix.layer }}"
-          if [ -d "layers/$LAYER/agents" ]; then
-            mkdir -p "target/.claude/agents"
-            for agent in layers/$LAYER/agents/*.md; do
-              [ -f "$agent" ] && cp "$agent" "target/.claude/agents/$(basename "$agent")"
-            done
-          fi
+          for LAYER in ${{ matrix.layers }}; do
+            if [ -d "layers/$LAYER/agents" ]; then
+              mkdir -p "target/.claude/agents"
+              for agent in layers/$LAYER/agents/*.md; do
+                [ -f "$agent" ] && cp "$agent" "target/.claude/agents/$(basename "$agent")"
+              done
+            fi
+          done
 
       - name: Sync layer rules
         run: |
-          LAYER="${{ matrix.layer }}"
-          if [ -d "layers/$LAYER/rules" ]; then
-            mkdir -p "target/.claude/rules"
-            for rule in layers/$LAYER/rules/*.md; do
-              [ -f "$rule" ] && cp "$rule" "target/.claude/rules/$(basename "$rule")"
-            done
-          fi
+          for LAYER in ${{ matrix.layers }}; do
+            if [ -d "layers/$LAYER/rules" ]; then
+              mkdir -p "target/.claude/rules"
+              for rule in layers/$LAYER/rules/*.md; do
+                [ -f "$rule" ] && cp "$rule" "target/.claude/rules/$(basename "$rule")"
+              done
+            fi
+          done
 
       - name: Sync layer PR template
         run: |
-          LAYER="${{ matrix.layer }}"
-          if [ -f "layers/$LAYER/templates/pull_request_template.md" ]; then
-            mkdir -p "target/.github"
-            cp "layers/$LAYER/templates/pull_request_template.md" "target/.github/pull_request_template.md"
-          fi
+          for LAYER in ${{ matrix.layers }}; do
+            if [ -f "layers/$LAYER/templates/pull_request_template.md" ]; then
+              mkdir -p "target/.github"
+              cp "layers/$LAYER/templates/pull_request_template.md" "target/.github/pull_request_template.md"
+            fi
+          done
 
       - name: Sync layer workflow templates
         run: |
-          LAYER="${{ matrix.layer }}"
-          if [ -d "layers/$LAYER/templates" ]; then
-            for tmpl in layers/$LAYER/templates/*.yml.template; do
-              [ -f "$tmpl" ] || continue
-              mkdir -p "target/.github/workflows"
-              cp "$tmpl" "target/.github/workflows/$(basename "$tmpl")"
-            done
-          fi
+          for LAYER in ${{ matrix.layers }}; do
+            if [ -d "layers/$LAYER/templates" ]; then
+              for tmpl in layers/$LAYER/templates/*.yml.template; do
+                [ -f "$tmpl" ] || continue
+                mkdir -p "target/.github/workflows"
+                cp "$tmpl" "target/.github/workflows/$(basename "$tmpl")"
+              done
+            fi
+          done
 
       - name: Configure git
         working-directory: target
@@ -149,14 +156,14 @@ jobs:
           BRANCH="sync/ai-dev-template-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
           git add .claude/ .github/
-          git commit -m "Sync ai-dev-template common + ${{ matrix.layer }} layer files"
+          git commit -m "Sync ai-dev-template common + ${{ matrix.layers }} layer files"
           git push -u origin "$BRANCH"
           FILES=$(git diff --name-only HEAD~1)
           gh pr create \
-            --title "Sync ai-dev-template updates (${{ matrix.layer }})" \
+            --title "Sync ai-dev-template updates (${{ matrix.layers }})" \
             --body "## Description
 
-          Automated sync of common + **${{ matrix.layer }}** layer files from ai-dev-templates.
+          Automated sync of common + **${{ matrix.layers }}** layer files from ai-dev-templates.
 
           ### Updated files
           ${FILES}

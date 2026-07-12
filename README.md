@@ -43,7 +43,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | Skill | Description |
 |---|---|
 | `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
-| `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue via /goal → review validation → conditional merge |
+| `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue in isolated sub-agent → evidence-based review validation → conditional merge |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
@@ -68,11 +68,13 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `ui-reviewer` | sonnet | maxTurns: 20, read-only | UI/UX quality reviewer (accessibility, platform guidelines, design personality) |
 | `perf-reviewer` | sonnet | maxTurns: 20, read-only | Compose/CMP performance reviewer (recomposition, lazy layout, main thread, memory) |
 | `repo-analyzer` | sonnet | maxTurns: 30 | GitHub repo feature/Issue/PR analysis (for /think) |
-| `deep-researcher` | sonnet | maxTurns: 20 | Web/SNS supplemental research (collector only) |
+| `deep-researcher` | haiku | maxTurns: 20 | Web/SNS supplemental research (collector only) |
 | `case-analyzer` | sonnet | maxTurns: 20 | Individual case deep dive analysis |
-| `social-scanner` | sonnet | maxTurns: 20 | X/Reddit/HN/community sentiment scan |
-| `source-verifier` | sonnet | maxTurns: 30 | URL existence + claim consistency check |
+| `social-scanner` | haiku | maxTurns: 20 | X/Reddit/HN/community sentiment scan |
+| `source-verifier` | haiku | maxTurns: 30 | URL existence + claim consistency check |
 | `counter-argument` | sonnet | maxTurns: 15 | Proposal stress-test: counter-arguments, risks |
+
+Model tiers follow `rules/ai-ops.md → Model Selection for Agents`: `haiku` for mechanical collection, `sonnet` for review/analysis, `opus` for long-horizon implementation (dev-all sub-agents). Aliases track the latest generation automatically.
 
 ## Hooks
 
@@ -89,6 +91,15 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `SubagentStop` | Log subagent completion with result summary |
 | `TaskCompleted` | Log task completion events |
 | `SessionEnd` | Session cleanup and final logging |
+
+## Skill Evals
+
+Critical skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev` and `dev-all` (autonomous-mode /goal condition quality, evidence validation, stop behavior).
+
+How to run (skill-creator methodology):
+1. Spawn with-skill and without-skill (baseline) runs **in the same turn**, 3 runs per configuration
+2. Grade with a separate grader agent against each eval's `expectations` — require evidence per expectation, not a verdict
+3. **Record for every run: subject model, date, and skill commit hash** — numbers from unrecorded runs are not comparable
 
 ## Feature Bloat Prevention
 
@@ -176,7 +187,7 @@ Plugin (language-agnostic)          Project (specific)
     ├─ Step 2: Parallel investigation (Explore agents)
     ├─ ── User confirms execution plan ──
     └─ Step 3: Sequential loop
-        ├─ /dev #42 (autonomous via /goal, worktree isolation)
+        ├─ /dev #42 (autonomous sub-agent, worktree isolation)
         ├─ Review validation (review.json: critical→skip, warning→ask)
         ├─ CI wait → conditional auto-merge
         ├─ /dev #43 (fresh context, latest main)

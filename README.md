@@ -246,8 +246,9 @@ ai-dev-templates/
 │   ├── log-subagent.sh           ← lifecycle event logger
 │   ├── save-context.sh
 │   └── restore-context.sh
-├── layers/
-│   ├── mobile/
+├── layers/                        ← composable: projects reference a list of layers
+│   ├── README.md                  ← layer model, drift policy, how to add a layer
+│   ├── kmp/                       ← KMP/CMP mobile (formerly "mobile")
 │   │   ├── agents/
 │   │   │   ├── ui-reviewer.md
 │   │   │   └── perf-reviewer.md
@@ -256,6 +257,7 @@ ai-dev-templates/
 │   │   │   ├── design-personality.md
 │   │   │   └── l10n-conventions.md
 │   │   └── templates/  (CI workflows)
+│   ├── react-native/              ← sibling adaptation of kmp (same concerns, RN mechanics)
 │   ├── web/
 │   │   ├── agents/ui-reviewer.md
 │   │   └── rules/web-conventions.md

@@ -286,6 +286,7 @@ If CLAUDE.md doesn't specify commands, detect from project files:
 - `package.json` → `npm test`, `npm run lint`
 - `Cargo.toml` → `cargo build`, `cargo test`, `cargo clippy`
 - `pyproject.toml` / `setup.py` → `pytest`, `ruff check`
+- `pubspec.yaml` → `flutter test` (or `dart test`), `dart analyze`
 
 ### Failure Handling
 1. Analyze the failure

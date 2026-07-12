@@ -29,7 +29,7 @@ Sync common skills, agents, hooks, rules, and **layer-specific files** from ai-d
 ### Step 1: Read Config
 
 Read `sync-config.json` to get:
-- `projects` — object mapping project name to `{ path, layer }`
+- `projects` — object mapping project name to `{ path, layers }` (`layers` is an ordered list; later layers override earlier ones on filename collision)
 - `common_skills`, `common_agents`, `common_rules`, `sync_hooks` — common files for all projects
 - `layer_types` — per-layer definitions for agents, rules, skills, templates
 
@@ -43,10 +43,10 @@ Layer files are at `${TEMPLATE_ROOT}/layers/{layer}/`.
 
 ### Step 2: Diff Check
 
-For each target project, diff **both common and layer-specific files**:
+For each target project, diff **both common and layer-specific files**. Process the project's `layers` list in order:
 
 ```
-## Sync Preview: {project} (layer: {layer})
+## Sync Preview: {project} (layers: {layers})
 
 ### Common Files
 | File | Status |
@@ -104,9 +104,9 @@ cp rules/{rule} {project}/.claude/rules/{rule}
 # Hooks (merge, don't overwrite — project may have custom hooks)
 # Show diff and ask user how to merge
 
-# --- Layer-specific files ---
+# --- Layer-specific files (repeat for each layer in the project's `layers` list, in order) ---
 
-LAYER={project_layer}
+LAYER={one_of_project_layers}
 
 # Layer agents
 cp ${TEMPLATE_ROOT}/layers/$LAYER/agents/{agent}.md {project}/.claude/agents/{agent}.md

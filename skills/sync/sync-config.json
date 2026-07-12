@@ -18,12 +18,6 @@
         "web"
       ]
     },
-    "KMP-FaceLink": {
-      "path": "../KMP-FaceLink",
-      "layers": [
-        "kmp"
-      ]
-    },
     "VocaDrip": {
       "path": "../VocaDrip",
       "layers": [

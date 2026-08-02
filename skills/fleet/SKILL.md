@@ -32,7 +32,7 @@ description: cmuxの全ペインを1箇所から統率する司令塔。返事�
 # 左上
 agent-witness top
 # 左下
-~/workspace/docs/zero-base/workspace/ai-agent-multiplex-2026/scripts/watch-waiting.sh 30 12
+~/.claude/skills/fleet/scripts/watch-waiting.sh 30 12
 ```
 
 ---
@@ -50,8 +50,8 @@ agent-witness top
 ### 取得
 
 ```bash
-scripts/waiting.py 12          # 人が読む形式
-scripts/waiting.py 12 --json   # 司令塔が読む形式（project/surface/said/asked/age_min）
+~/.claude/skills/fleet/scripts/waiting.py 12          # 人が読む形式
+~/.claude/skills/fleet/scripts/waiting.py 12 --json   # 司令塔が読む形式（project/surface/said/asked/age_min）
 ```
 
 出力例:
@@ -80,7 +80,8 @@ workstream.jsonl の kind:"stop"
 
 ### 必ず守ること
 
-- **生存セッションで絞る**（`agent-witness ls --live`）。stop はセッションを閉じても記録に残るため、絞らないと**閉じたセッションの最後の発言が永久に居座る**（実際に3件居座り、返信先が存在しなかった）
+- **返信先が現存するものだけ残す**（`cmux tree` で解決できた surface のみ）。stop はセッションを閉じても記録に残るため、絞らないと**閉じたセッションの最後の発言が永久に居座る**（実際に3件居座り、返信先が存在しなかった）。
+  ⚠️ **`agent-witness ls --live` で絞ってはいけない**。`--live` は "started, **not stopped**" を意味するので、**stop したセッション = まさに返事待ちのセッションが必ず除外される**（これで agent-witness 自身の完了報告を取りこぼした）。`activeSessionsBySurface` 全体もダメ（過去の登録が残る）
 - **worktree のパスを解決する**。`/kakimato/.claude/worktrees/agent-a1441…` の末尾を取ると無意味なIDになる。リポ名は `.claude/worktrees/` の**手前**にある
 - **重複を除去する**。複数の Stop hook（rio設定2つ＋cmux注入3つ）が同一ターンを二重記録する
 
@@ -111,8 +112,8 @@ rio > 1 に「触り比べた。差は感じない」
 **画面パースに依存しないこと。** `read_screen` の `parsed` は実測で3回中1回しか成功しない（稼働中でも `status:"idle"`、`model:null` を返す）。
 
 ```bash
-agent-witness ls --live --window 1800   # 生存セッション（hookベース・正確）
-agent-witness top                        # 常時更新の監視ビュー
+agent-witness top    # 常時更新の監視ビュー（0.0.7 で worktree のリポ名解決が入った）
+agent-witness ls     # 記録されている全セッション（--live は "not stopped" なので返事待ちの判定には使えない）
 ```
 ```
 mcp__cmux__list_surfaces(include_screen_preview=true, preview_lines=3)
@@ -121,7 +122,7 @@ mcp__cmux__list_surfaces(include_screen_preview=true, preview_lines=3)
   → resume_binding.checkpoint_id（= sessionId）
 ```
 
-⚠️ **`agent-witness top` は worktree のディレクトリ名をそのまま出す**ため、`agent-a1441aa58313b993f` のような読めない表示になる。上記のパス解決を入れるまでは、プロジェクト名は `list_surfaces` か `waiting.py` から取ること。
+✅ **`agent-witness` 0.0.7 で worktree のリポ名解決が入った**（2026-08-02リリース）。`agent-a1441aa58313b993f` ではなく `kakimato` と表示される。0.0.6 以前を使っている環境では `list_surfaces` か `waiting.py` からプロジェクト名を取ること。
 
 ### 表示形式
 
@@ -295,7 +296,7 @@ done
 - **タブを開いた回数**（司令塔で済んだか、結局開いたか）
 - **司令塔が宛先を間違えた回数**（誤送信は実害。最初の数日は送信前に宛先を1行で確認する）
 
-計測スクリプト: `~/workspace/docs/zero-base/workspace/ai-agent-multiplex-2026/scripts/`
+計測スクリプト: `~/.claude/skills/fleet/scripts/`
 - `waiting.py` — 返事待ちキュー
 - `watch-waiting.sh` — 30秒更新の監視ペイン用
 - `measure_skill_conformance.py` — スキル実行区間ごとのサブエージェント起動

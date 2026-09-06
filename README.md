@@ -10,6 +10,22 @@ Claude Code plugin for AI-driven development workflows. Language-agnostic harnes
 - **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
 - **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
 
+## Assumptions
+
+This plugin is **language-agnostic but not tracker-agnostic**. It assumes:
+
+| Assumption | Where it binds |
+|---|---|
+| **GitHub** is the issue tracker and code host, with the `gh` CLI authenticated | `issue`, `pr`, `dev`, `dev-all`, `audit`, `ux-audit`, `competitive-audit`, `monitor` |
+| The project has a `CLAUDE.md` naming its build/test/lint commands | every skill that runs a quality gate; there is an auto-detect fallback for Gradle, npm, Cargo, ruff and Flutter, but CLAUDE.md wins |
+| The project defines **Core Values** in `CLAUDE.md` | `competitive-audit` (hard gate), `issue`, `rules/ai-ops.md` |
+
+`/dev` can *read* a Linear issue (`XXX-1234`) through the Linear MCP, but every write path —
+issue creation, branch, PR, merge — is GitHub. A project on Jira or GitLab can use the
+investigation, review and decomposition skills, not the issue and PR ones.
+
+`monitor` additionally assumes a mobile app with store presence and Crashlytics.
+
 ## Install
 
 ### As Plugin (for personal use)
@@ -45,14 +61,15 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
 | `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue in isolated sub-agent → evidence-based review validation → conditional merge |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
+| `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
+| `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
 | `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
 | `/ai-dev:decompose` | Task decomposition into ordered subtasks + Codex architecture validation |
-| `/ai-dev:audit [scope]` | Codebase health + visual bug audit with parallel scanners → GitHub Issues |
+| `/ai-dev:audit [scope]` | Codebase health audit with parallel scanners (debt / quality / architecture+performance / visual / deps) → GitHub Issues |
 | `/ai-dev:competitive-audit [focus]` | Core Value-filtered competitive analysis: user pain points → max 3 issues + Won't Do recording |
 | `/ai-dev:ux-audit [target]` | UI/UX comprehensive audit: heuristics, accessibility, visual, platform guidelines → GitHub Issues |
-| `/ai-dev:tech-debt` | Technical debt scan → GitHub Issues for high-severity findings |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
 | `/ai-dev:update-docs [scope]` | Documentation audit & update (architecture, changelog, readme, oss) |
 | `/ai-dev:sync` | Sync common files to target projects |
@@ -94,7 +111,7 @@ Model tiers follow `rules/ai-ops.md → Model Selection for Agents`: `haiku` for
 
 ## Skill Evals
 
-Critical skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev` and `dev-all` (autonomous-mode /goal condition quality, evidence validation, stop behavior).
+Skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev`, `dev-all`, `issue`, `audit`, `review`, `dig`, `decompose`, `investigate`, `competitive-audit` — 3 evals each, targeting the failure mode the skill exists to prevent.
 
 How to run (skill-creator methodology):
 1. Spawn with-skill and without-skill (baseline) runs **in the same turn**, 3 runs per configuration
@@ -120,6 +137,25 @@ Features explicitly decided NOT to build are recorded in `CLAUDE.md → ## Won't
 - Future audits from re-proposing the same rejected ideas
 - Research documents from becoming feature requests without review
 
+### Issue Sizing Gate
+
+Every issue-creating skill (`audit`, `ux-audit`, `competitive-audit`, `monitor`) delegates
+to `/ai-dev:issue` instead of calling `gh issue create` itself. That skill enforces one gate before
+anything is filed:
+
+| # | Check | Fails when |
+|---|-------|-----------|
+| 1 | Single outcome | Title needs "and", or is a category verb with no object |
+| 2 | Bounded change | Expected edit exceeds ~5 files / ~300 lines |
+| 3 | Single proof | No `Done when` naming a real command and its exact success output |
+| 4 | No open decisions | An unresolved design choice is still in the body |
+| 5 | Independently mergeable | Merging it alone breaks the repo or changes nothing observable |
+
+A failed gate produces a split (`skills/issue/splitting.md`), a spike, or an epic with children —
+never a filed issue. `/dev` runs the same gate on its incoming issue and stops rather than
+implementing an oversized one, because an issue's `Done when` is reused verbatim as the `/goal`
+completion condition.
+
 ### Structural Constraints
 
 - **competitive-audit**: Max 3 issues per run, Core Value gate at Phase 0, user pain points as primary input (not competitor feature lists)
@@ -132,6 +168,8 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 
 - **Deterministic feedback loops**: Hooks provide millisecond-level lint/format feedback — not dependent on LLM judgment
 - **Context efficiency**: Skills are on-demand (loaded only when invoked), `context: fork` isolates token-heavy investigation, sub-agents provide context firewalls
+- **Progressive disclosure**: every SKILL.md body stays well under the 500-line budget; procedures, criteria and templates live in sibling reference files that load only when the workflow reaches them (`investigate/report-format.md` is shared by two skills, so the method exists once)
+- **Single writer per side effect**: only `issue` calls `gh issue create`; only `pr` opens PRs. Scanning skills produce findings and hand them over
 - **Dual-model design**: Codex handles technical design exploration; Claude handles implementation, review, and codebase consistency — each model used for its strength
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
@@ -206,20 +244,31 @@ ai-dev-templates/
 │       └── sync-to-projects.yml
 ├── skills/
 │   ├── dev/SKILL.md
-│   ├── dev-investigate/SKILL.md  ← context: fork investigation
+│   ├── dev-investigate/SKILL.md  ← context: fork, thin wrapper
 │   ├── dev-all/SKILL.md
 │   ├── review/SKILL.md
 │   ├── pr/SKILL.md
 │   ├── dig/SKILL.md
 │   ├── decompose/SKILL.md
+│   ├── investigate/
+│   │   ├── SKILL.md
+│   │   └── report-format.md       ← shared with dev-investigate
+│   ├── issue/                     ← single writer of GitHub Issues
+│   │   ├── SKILL.md
+│   │   ├── splitting.md           ← split moves + worked examples
+│   │   └── evals/evals.json
 │   ├── audit/SKILL.md
-│   ├── competitive-audit/SKILL.md
+│   ├── competitive-audit/
+│   │   ├── SKILL.md
+│   │   └── research-method.md     ← Phase 2 + 4 procedures
 │   ├── ux-audit/
 │   │   ├── SKILL.md
-│   │   └── reference.md
-│   ├── tech-debt/SKILL.md
+│   │   └── reference.md           ← heuristics, WCAG, platform checks
 │   ├── think/SKILL.md
-│   ├── update-docs/SKILL.md
+│   ├── update-docs/
+│   │   ├── SKILL.md
+│   │   ├── scanners.md            ← 4 scanner agent prompts
+│   │   └── templates.md           ← ARCHITECTURE/CHANGELOG/README/OSS shapes
 │   ├── monitor/SKILL.md
 │   ├── sync/
 │   │   ├── SKILL.md

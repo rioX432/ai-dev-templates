@@ -28,6 +28,11 @@ Sync common skills, agents, hooks, rules, and **layer-specific files** from ai-d
 
 ### Step 1: Read Config
 
+`sync-config.json → common_skills` is the single source of truth for which skills are common —
+`.github/workflows/sync-to-projects.yml` reads the same list. Removing a skill from it stops
+both this skill and CI from updating it in target repos; the already-deployed copy stays and
+goes stale, so delete it from the target too.
+
 Read `sync-config.json` to get:
 - `projects` — object mapping project name to `{ path, layers }` (`layers` is an ordered list; later layers override earlier ones on filename collision)
 - `common_skills`, `common_agents`, `common_rules`, `sync_hooks` — common files for all projects
@@ -89,9 +94,10 @@ For each confirmed project:
 ```bash
 # --- Common files ---
 
-# Skills
+# Skills — copy the whole directory: reference files, evals, and scripts
+# are part of the skill's progressive disclosure, not optional extras
 mkdir -p {project}/.claude/skills/{skill}/
-cp skills/{skill}/SKILL.md {project}/.claude/skills/{skill}/SKILL.md
+cp -R skills/{skill}/. {project}/.claude/skills/{skill}/
 
 # Agents
 mkdir -p {project}/.claude/agents/

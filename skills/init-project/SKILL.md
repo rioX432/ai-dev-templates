@@ -81,20 +81,24 @@ $ARGUMENTS/.claude/skills/
 Copy each skill **directory** (`cp -R`), not just its `SKILL.md` — reference files
 (`issue/splitting.md`), evals, and scripts are part of the skill.
 
-### 6. Copy Common Agents
+### 6. Copy Common Agents and Rules
+
+Copy every entry listed in `skills/sync/sync-config.json` under `common_agents` and
+`common_rules` — that file is the single source of truth, shared with `/sync` and with
+`.github/workflows/sync-to-projects.yml`. Do not hardcode the list here; read it.
 
 ```
-$ARGUMENTS/.claude/agents/
-  security-reviewer.md
-  test-writer.md
+$ARGUMENTS/.claude/agents/   ← one file per common_agents entry, plus layer agents (step 8)
+$ARGUMENTS/.claude/rules/    ← one file per common_rules entry, plus layer rules (step 8)
 ```
 
-### 7. Copy Common Rules
+### 7. Write the Sync Manifest
 
-```
-$ARGUMENTS/.claude/rules/
-  behavior.md
-  ai-ops.md
+Write `$ARGUMENTS/.claude/.ai-dev-synced` listing what was installed, so later syncs can tell
+a template file from one the project added itself:
+
+```json
+{"skills": [...], "agents": ["security-reviewer.md", ...], "rules": ["behavior.md", ...]}
 ```
 
 ### 8. Copy Layer-Specific Files (if $PROJECT_LAYERS is not empty)

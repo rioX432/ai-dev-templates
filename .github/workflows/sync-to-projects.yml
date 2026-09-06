@@ -72,20 +72,28 @@ jobs:
 
       - name: Sync common agents
         run: |
-          for agent in agents/*.md; do
-            [ -f "$agent" ] || continue
+          # Same list /sync uses, so both converge on one manifest and neither
+          # prunes what the other installed
+          for agent in $(jq -r '.common_agents[]' skills/sync/sync-config.json); do
+            if [ ! -f "agents/$agent.md" ]; then
+              echo "::error::common_agents lists '$agent' but agents/$agent.md does not exist"
+              exit 1
+            fi
             mkdir -p "target/.claude/agents"
-            cp "$agent" "target/.claude/agents/$(basename "$agent")"
-            basename "$agent" >> /tmp/synced-agents
+            cp "agents/$agent.md" "target/.claude/agents/$agent.md"
+            echo "$agent.md" >> /tmp/synced-agents
           done
 
       - name: Sync common rules
         run: |
-          for rule in rules/*.md; do
-            [ -f "$rule" ] || continue
+          for rule in $(jq -r '.common_rules[]' skills/sync/sync-config.json); do
+            if [ ! -f "rules/$rule" ]; then
+              echo "::error::common_rules lists '$rule' but rules/$rule does not exist"
+              exit 1
+            fi
             mkdir -p "target/.claude/rules"
-            cp "$rule" "target/.claude/rules/$(basename "$rule")"
-            basename "$rule" >> /tmp/synced-rules
+            cp "rules/$rule" "target/.claude/rules/$rule"
+            echo "$rule" >> /tmp/synced-rules
           done
 
       - name: Sync layer agents

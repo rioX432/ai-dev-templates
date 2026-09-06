@@ -73,12 +73,19 @@
     "ux-audit"
   ],
   "common_agents": [
+    "case-analyzer",
+    "counter-argument",
+    "deep-researcher",
+    "repo-analyzer",
     "security-reviewer",
+    "social-scanner",
+    "source-verifier",
     "test-writer"
   ],
   "common_rules": [
+    "ai-ops.md",
     "behavior.md",
-    "ai-ops.md"
+    "coding-conventions.md"
   ],
   "sync_hooks": true,
   "layer_types": {

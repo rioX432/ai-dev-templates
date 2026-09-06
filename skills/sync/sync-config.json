@@ -56,16 +56,21 @@
     }
   },
   "common_skills": [
-    "dev",
-    "dev-all",
-    "review",
-    "pr",
-    "dig",
-    "decompose",
-    "tech-debt",
     "audit",
     "competitive-audit",
-    "investigate"
+    "decompose",
+    "dev",
+    "dev-all",
+    "dev-investigate",
+    "dig",
+    "investigate",
+    "issue",
+    "monitor",
+    "pr",
+    "review",
+    "think",
+    "update-docs",
+    "ux-audit"
   ],
   "common_agents": [
     "security-reviewer",

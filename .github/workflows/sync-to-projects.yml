@@ -5,7 +5,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'skills/**/SKILL.md'
+      # Whole skill directories: reference files (splitting.md, report-format.md,
+      # scanners.md, templates.md) and evals are part of the skill, not extras
+      - 'skills/**'
       - 'agents/*.md'
       - 'rules/*.md'
       - 'hooks/**'
@@ -53,14 +55,15 @@ jobs:
 
       - name: Sync common skills
         run: |
-          EXCLUDE="init-project sync"
-          for skill_dir in skills/*/; do
-            skill=$(basename "$skill_dir")
-            echo "$EXCLUDE" | grep -qw "$skill" && continue
-            if [ -f "skills/$skill/SKILL.md" ]; then
-              mkdir -p "target/.claude/skills/$skill"
-              cp "skills/$skill/SKILL.md" "target/.claude/skills/$skill/SKILL.md"
+          # Single source of truth for which skills are common, shared with /sync
+          for skill in $(jq -r '.common_skills[]' skills/sync/sync-config.json); do
+            if [ ! -f "skills/$skill/SKILL.md" ]; then
+              echo "::error::common_skills lists '$skill' but skills/$skill/SKILL.md does not exist"
+              exit 1
             fi
+            mkdir -p "target/.claude/skills/$skill"
+            # Copy the whole directory: reference files and evals are part of the skill
+            cp -R "skills/$skill/." "target/.claude/skills/$skill/"
           done
 
       - name: Sync common agents

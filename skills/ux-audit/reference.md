@@ -1,6 +1,11 @@
 # UX Audit Reference — Detailed Criteria
 
-This file contains detailed evaluation criteria referenced by SKILL.md.
+Detailed evaluation criteria for the four analysis agents in SKILL.md Phase 2.
+
+## Contents
+- Nielsen's 10 Usability Heuristics
+- WCAG 2.2 AA Checklist (Key Items)
+- Platform-Specific Checks
 
 ---
 

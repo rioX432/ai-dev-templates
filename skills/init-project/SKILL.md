@@ -67,15 +67,19 @@ Copy shared skills from ai-dev-templates:
 
 ```
 $ARGUMENTS/.claude/skills/
-  dev/SKILL.md
-  dev-all/SKILL.md
-  review/SKILL.md
-  pr/SKILL.md
-  dig/SKILL.md
-  decompose/SKILL.md
-  tech-debt/SKILL.md
-  audit/SKILL.md
+  dev/
+  dev-all/
+  dev-investigate/
+  review/
+  pr/
+  dig/
+  decompose/
+  issue/
+  audit/
 ```
+
+Copy each skill **directory** (`cp -R`), not just its `SKILL.md` — reference files
+(`issue/splitting.md`), evals, and scripts are part of the skill.
 
 ### 6. Copy Common Agents
 

@@ -55,6 +55,9 @@ jobs:
 
       - name: Sync common skills
         run: |
+          # Records what this run installs, so the prune step can tell an upstream
+          # deletion apart from a skill the project added itself
+          : > /tmp/synced-skills; : > /tmp/synced-agents; : > /tmp/synced-rules
           # Single source of truth for which skills are common, shared with /sync
           for skill in $(jq -r '.common_skills[]' skills/sync/sync-config.json); do
             if [ ! -f "skills/$skill/SKILL.md" ]; then
@@ -64,6 +67,7 @@ jobs:
             mkdir -p "target/.claude/skills/$skill"
             # Copy the whole directory: reference files and evals are part of the skill
             cp -R "skills/$skill/." "target/.claude/skills/$skill/"
+            echo "$skill" >> /tmp/synced-skills
           done
 
       - name: Sync common agents
@@ -72,6 +76,7 @@ jobs:
             [ -f "$agent" ] || continue
             mkdir -p "target/.claude/agents"
             cp "$agent" "target/.claude/agents/$(basename "$agent")"
+            basename "$agent" >> /tmp/synced-agents
           done
 
       - name: Sync common rules
@@ -80,6 +85,7 @@ jobs:
             [ -f "$rule" ] || continue
             mkdir -p "target/.claude/rules"
             cp "$rule" "target/.claude/rules/$(basename "$rule")"
+            basename "$rule" >> /tmp/synced-rules
           done
 
       - name: Sync layer agents
@@ -88,7 +94,9 @@ jobs:
             if [ -d "layers/$LAYER/agents" ]; then
               mkdir -p "target/.claude/agents"
               for agent in layers/$LAYER/agents/*.md; do
-                [ -f "$agent" ] && cp "$agent" "target/.claude/agents/$(basename "$agent")"
+                [ -f "$agent" ] || continue
+                cp "$agent" "target/.claude/agents/$(basename "$agent")"
+                basename "$agent" >> /tmp/synced-agents
               done
             fi
           done
@@ -99,7 +107,9 @@ jobs:
             if [ -d "layers/$LAYER/rules" ]; then
               mkdir -p "target/.claude/rules"
               for rule in layers/$LAYER/rules/*.md; do
-                [ -f "$rule" ] && cp "$rule" "target/.claude/rules/$(basename "$rule")"
+                [ -f "$rule" ] || continue
+                cp "$rule" "target/.claude/rules/$(basename "$rule")"
+                basename "$rule" >> /tmp/synced-rules
               done
             fi
           done
@@ -124,6 +134,33 @@ jobs:
               done
             fi
           done
+
+      - name: Prune files removed upstream
+        working-directory: target
+        run: |
+          # Copying alone never removes anything, so a skill deleted upstream would
+          # linger here forever as a stale copy that still looks current. The manifest
+          # records what previous runs installed, so only those are eligible for removal
+          # — files the project added itself are never touched.
+          MANIFEST=.claude/.ai-dev-synced
+          if [ -f "$MANIFEST" ]; then
+            for s in $(jq -r '.skills[]?' "$MANIFEST"); do
+              grep -qxF "$s" /tmp/synced-skills || { echo "prune skill $s"; rm -rf ".claude/skills/$s"; }
+            done
+            for a in $(jq -r '.agents[]?' "$MANIFEST"); do
+              grep -qxF "$a" /tmp/synced-agents || { echo "prune agent $a"; rm -f ".claude/agents/$a"; }
+            done
+            for r in $(jq -r '.rules[]?' "$MANIFEST"); do
+              grep -qxF "$r" /tmp/synced-rules || { echo "prune rule $r"; rm -f ".claude/rules/$r"; }
+            done
+          fi
+          mkdir -p .claude
+          to_json() { jq -R -s 'split("\n") | map(select(length > 0)) | sort | unique' "$1"; }
+          jq -n \
+            --argjson skills "$(to_json /tmp/synced-skills)" \
+            --argjson agents "$(to_json /tmp/synced-agents)" \
+            --argjson rules  "$(to_json /tmp/synced-rules)" \
+            '{skills: $skills, agents: $agents, rules: $rules}' > "$MANIFEST"
 
       - name: Configure git
         working-directory: target

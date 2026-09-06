@@ -29,9 +29,8 @@ Sync common skills, agents, hooks, rules, and **layer-specific files** from ai-d
 ### Step 1: Read Config
 
 `sync-config.json → common_skills` is the single source of truth for which skills are common —
-`.github/workflows/sync-to-projects.yml` reads the same list. Removing a skill from it stops
-both this skill and CI from updating it in target repos; the already-deployed copy stays and
-goes stale, so delete it from the target too.
+`.github/workflows/sync-to-projects.yml` reads the same list. Removing a skill from it makes
+Step 4b prune it from every target on the next sync.
 
 Read `sync-config.json` to get:
 - `projects` — object mapping project name to `{ path, layers }` (`layers` is an ordered list; later layers override earlier ones on filename collision)
@@ -132,6 +131,32 @@ cp ${TEMPLATE_ROOT}/layers/$LAYER/templates/pull_request_template.md {project}/.
 mkdir -p {project}/.github/workflows/
 cp ${TEMPLATE_ROOT}/layers/$LAYER/templates/{workflow}.yml.template {project}/.github/workflows/{workflow}.yml.template
 ```
+
+### Step 4b: Prune files removed upstream
+
+Copying never removes anything, so a skill deleted from this repo would linger in the target
+as a stale copy that still looks current. `{project}/.claude/.ai-dev-synced` records what
+previous syncs installed, so only those are eligible for removal — files the project added
+itself are never touched.
+
+```bash
+MANIFEST={project}/.claude/.ai-dev-synced
+# Compare the manifest's lists against what this run just copied.
+# For each entry present in the manifest but NOT copied this run:
+#   skills → rm -rf {project}/.claude/skills/{name}
+#   agents → rm -f  {project}/.claude/agents/{name}
+#   rules  → rm -f  {project}/.claude/rules/{name}
+# Then rewrite the manifest with what this run copied:
+#   {"skills": [...], "agents": [...], "rules": [...]}
+```
+
+**Show every prune to the user before deleting** — a removal is not reversible from the target
+side. If the manifest is missing (first sync), prune nothing and just write it.
+
+`.github/workflows/sync-to-projects.yml` runs the identical logic, so a manual `/sync` and an
+automated sync converge on the same state.
+
+---
 
 ### Step 5: Report
 

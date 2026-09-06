@@ -170,6 +170,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **Context efficiency**: Skills are on-demand (loaded only when invoked), `context: fork` isolates token-heavy investigation, sub-agents provide context firewalls
 - **Progressive disclosure**: every SKILL.md body stays well under the 500-line budget; procedures, criteria and templates live in sibling reference files that load only when the workflow reaches them (`investigate/report-format.md` is shared by two skills, so the method exists once)
 - **Single writer per side effect**: only `issue` calls `gh issue create`; only `pr` opens PRs. Scanning skills produce findings and hand them over
+- **Convergent sync**: `/sync` and the CI workflow read the same `common_skills` list and run the same prune, so a skill deleted here disappears from every target instead of lingering as a stale copy. `.claude/.ai-dev-synced` in each target records what the template installed, so project-local skills are never touched
 - **Dual-model design**: Codex handles technical design exploration; Claude handles implementation, review, and codebase consistency — each model used for its strength
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs

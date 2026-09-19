@@ -63,19 +63,11 @@ This **replaces** the common PR template copied in Step 3 (later layers override
 
 ### 5. Copy Common Skills
 
-Copy shared skills from ai-dev-templates:
+Copy every skill listed in `skills/sync/sync-config.json` under `common_skills` — the same
+single source of truth as Step 6. Do not hardcode the list here; read it.
 
 ```
-$ARGUMENTS/.claude/skills/
-  dev/
-  dev-all/
-  dev-investigate/
-  review/
-  pr/
-  dig/
-  decompose/
-  issue/
-  audit/
+$ARGUMENTS/.claude/skills/{skill}/   ← one directory per common_skills entry
 ```
 
 Copy each skill **directory** (`cp -R`), not just its `SKILL.md` — reference files

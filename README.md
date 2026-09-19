@@ -5,7 +5,7 @@ Claude Code plugin for AI-driven development workflows. Language-agnostic harnes
 **Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
 
 **v3.0 highlights:**
-- **Codex integration**: Technical design verification via Codex MCP in `/dev`, `/dig`, `/decompose` (optional, with fallback)
+- **Codex integration**: Technical design verification via the Codex CLI (`codex exec`, read-only) in `/dev`, `/dig`, `/decompose` (optional, with fallback)
 - **Context isolation**: `/dev-investigate` runs in a forked context, keeping investigation token costs out of the main session
 - **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
 - **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
@@ -64,6 +64,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
 | `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
 | `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
+| `/ai-dev:clean-slop [scope]` | Remove AI narration and change-history comments from the current change; comment text only. Runs as `/dev`'s cleanup pass |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
 | `/ai-dev:decompose` | Task decomposition into ordered subtasks + Codex architecture validation |
@@ -111,7 +112,7 @@ Model tiers follow `rules/ai-ops.md → Model Selection for Agents`: `haiku` for
 
 ## Skill Evals
 
-Skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev`, `dev-all`, `issue`, `audit`, `review`, `dig`, `decompose`, `investigate`, `competitive-audit` — 3 evals each, targeting the failure mode the skill exists to prevent.
+Skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev`, `dev-all`, `issue`, `audit`, `review`, `dig`, `decompose`, `investigate`, `competitive-audit`, `clean-slop` — 3-4 evals each, targeting the failure mode the skill exists to prevent.
 
 How to run (skill-creator methodology):
 1. Spawn with-skill and without-skill (baseline) runs **in the same turn**, 3 runs per configuration
@@ -207,15 +208,15 @@ Plugin (language-agnostic)          Project (specific)
 /ai-dev:dev #42
     ├─ Phase 1: Issue Understanding (GitHub / Linear / Figma)
     ├─ Phase 2: Investigation (/dev-investigate, context: fork)
-    ├─ Phase 2.5: Technical Design (Codex MCP, optional)
+    ├─ Phase 2.5: Technical Design (Codex, optional)
     ├─ Phase 3: Ambiguity Resolution (/dig + Codex design review)
     ├─ Phase 4: Task Decomposition (/decompose + Codex validation)
     ├─ ── User confirms approach ──
-    ├─ Phase 5: Branch & Implement (subtask loop)
+    ├─ Phase 5: Branch & Implement (subtask loop → /clean-slop)
     ├─ Phase 6: Quality Gate (build/test/lint from CLAUDE.md)
     ├─ Phase 7: Review (/review → review.json artifact)
     ├─ ── User confirms commit ──
-    └─ Phase 8: Commit & PR
+    └─ Phase 8: Commit & PR (/pr)
 ```
 
 ## Workflow: dev-all
@@ -249,6 +250,7 @@ ai-dev-templates/
 │   ├── dev-all/SKILL.md
 │   ├── review/SKILL.md
 │   ├── pr/SKILL.md
+│   ├── clean-slop/SKILL.md
 │   ├── dig/SKILL.md
 │   ├── decompose/SKILL.md
 │   ├── investigate/
@@ -314,7 +316,7 @@ ai-dev-templates/
 │   └── iot/
 │       └── rules/iot-conventions.md
 └── rules/
-    ├── behavior.md              ← No Guessing + Codex MCP usage
+    ├── behavior.md              ← No Guessing + Codex usage
     ├── coding-conventions.md
     └── ai-ops.md                ← Core Value guard + Codex conditions + WIP limit
 ```

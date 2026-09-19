@@ -11,7 +11,7 @@
       "name": "ai-dev",
       "source": "./",
       "description": "E2E issue resolution, Codex-assisted design, multi-agent review, context-isolated investigation — language-agnostic harness engineering",
-      "version": "3.0.0"
+      "version": "3.1.0"
     }
   ]
 }

@@ -1,6 +1,8 @@
 # Layers
 
-Layers bundle platform/framework-specific agents, rules, and CI templates. Projects reference an **ordered list** of layers (`layers` in `skills/sync/sync-config.json` and the matrix in `.github/workflows/sync-to-projects.yml`); files are applied in order, so later layers override earlier ones on filename collision.
+Layers bundle platform/framework-specific agents, rules, and CI templates. Projects reference an **ordered list** of
+layers in `skills/sync/sync-config.json`; the CI matrix is generated from that registry. Files are applied in order,
+so later layers override earlier ones on filename collision.
 
 | Layer | Scope |
 |---|---|
@@ -19,10 +21,14 @@ Language-level differences (build/test/lint commands) are **not** a layer concer
 
 ## Constraints from CI distribution
 
-The sync workflow copies layer files **by basename** into target repos' `.claude/` and never deletes. Therefore:
+The sync workflow copies layer files **by basename** into target repos' `.claude/`. Its manifest-based prune
+deletes only paths that a previous ai-dev sync installed and the current configuration no longer owns; files a
+project added itself are not eligible. Therefore:
 
-- **Do not rename layer rule/agent files.** A rename ships the new file but strands the old one in every target repo. If a rename is unavoidable, ship a cleanup commit to each target (or handle it in the sync PR body).
-- Renaming a **layer directory** (like `mobile` → `kmp`) is safe — only source paths change; update `sync-config.json` and the workflow matrix together.
+- A renamed layer rule/agent file is removed on the next sync only when the old basename is present in
+  `.claude/.ai-dev-synced`. For targets without a manifest, review and remove the stale path manually.
+- Renaming a **layer directory** (like `mobile` → `kmp`) is safe when its sources and
+  `sync-config.json` entry change together; the workflow matrix is generated automatically.
 
 ## Adding a new framework layer (e.g. flutter)
 

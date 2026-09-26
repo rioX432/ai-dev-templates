@@ -5,55 +5,54 @@ on:
   push:
     branches: [main]
     paths:
-      # Whole skill directories: reference files (splitting.md, report-format.md,
-      # scanners.md, templates.md) and evals are part of the skill, not extras
+      # Whole skill directories: referenced procedures and scripts are part of the
+      # skill. Root-level evals/ are plugin-development tests and are not distributed.
       - 'skills/**'
       - 'agents/*.md'
       - 'rules/*.md'
       - 'hooks/**'
-      - 'scripts/*.sh'
+      - 'scripts/**'
       - 'layers/**'
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.projects.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - id: projects
+        name: Build project matrix from sync config
+        run: |
+          python3 scripts/sync-config.py validate
+          MATRIX=$(python3 scripts/sync-config.py matrix)
+          test "$MATRIX" != "[]"
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
   sync:
+    needs: prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # layers: space-separated, applied in order (later layers override
-        # earlier ones on filename collision). Keep in sync with
-        # skills/sync/sync-config.json.
-        include:
-          - repo: CivitDeck
-            layers: kmp
-          - repo: live-translate
-            layers: web
-          - repo: vtslide
-            layers: web
-          - repo: VocaDrip
-            layers: kmp
-          - repo: personal-ai-secretary
-            layers: web
-          - repo: kamibukuro
-            layers: web
-          - repo: desk-secretary-bot
-            layers: iot
-          - repo: kakimato
-            layers: react-native
-          - repo: viral-loc-monorepo
-            layers: kmp
+        # sync-config.json is the only project/layer registry.
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout ai-dev-templates
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Checkout target repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: ${{ github.repository_owner }}/${{ matrix.repo }}
           path: target
           token: ${{ secrets.SYNC_PAT }}
 
       - name: Sync common skills
+        env:
+          SYNC_ADAPTERS: ${{ matrix.adapters }}
         run: |
           # Records what this run installs, so the prune step can tell an upstream
           # deletion apart from a skill the project added itself
@@ -65,10 +64,22 @@ jobs:
               exit 1
             fi
             mkdir -p "target/.claude/skills/$skill"
+            case " $SYNC_ADAPTERS " in
+              *" codex "*) mkdir -p "target/.agents/skills" ;;
+            esac
             # Copy the whole directory: reference files and evals are part of the skill
             cp -R "skills/$skill/." "target/.claude/skills/$skill/"
+            case " $SYNC_ADAPTERS " in
+              *" codex "*) python3 scripts/render-codex-skill.py "skills/$skill" "target/.agents/skills/$skill" ;;
+            esac
             echo "$skill" >> /tmp/synced-skills
           done
+
+      - name: Seed portable project guidance
+        run: |
+          if [ ! -e target/AGENTS.md ]; then
+            cp skills/init-project/templates/AGENTS.md.template target/AGENTS.md
+          fi
 
       - name: Sync common agents
         run: |
@@ -101,7 +112,7 @@ jobs:
           for LAYER in ${{ matrix.layers }}; do
             if [ -d "layers/$LAYER/agents" ]; then
               mkdir -p "target/.claude/agents"
-              for agent in layers/$LAYER/agents/*.md; do
+              for agent in "layers/$LAYER/agents/"*.md; do
                 [ -f "$agent" ] || continue
                 cp "$agent" "target/.claude/agents/$(basename "$agent")"
                 basename "$agent" >> /tmp/synced-agents
@@ -114,7 +125,7 @@ jobs:
           for LAYER in ${{ matrix.layers }}; do
             if [ -d "layers/$LAYER/rules" ]; then
               mkdir -p "target/.claude/rules"
-              for rule in layers/$LAYER/rules/*.md; do
+              for rule in "layers/$LAYER/rules/"*.md; do
                 [ -f "$rule" ] || continue
                 cp "$rule" "target/.claude/rules/$(basename "$rule")"
                 basename "$rule" >> /tmp/synced-rules
@@ -135,31 +146,45 @@ jobs:
         run: |
           for LAYER in ${{ matrix.layers }}; do
             if [ -d "layers/$LAYER/templates" ]; then
-              for tmpl in layers/$LAYER/templates/*.yml.template; do
+              for tmpl in "layers/$LAYER/templates/"*.yml.template; do
                 [ -f "$tmpl" ] || continue
                 mkdir -p "target/.github/workflows"
-                cp "$tmpl" "target/.github/workflows/$(basename "$tmpl")"
+                destination="target/.github/workflows/$(basename "$tmpl")"
+                if [ ! -e "$destination" ]; then
+                  cp "$tmpl" "$destination"
+                else
+                  echo "seed-only workflow preserved: $destination"
+                fi
               done
             fi
           done
 
-      - name: Prune files removed upstream
+      - name: Report stale managed files
         working-directory: target
         run: |
           # Copying alone never removes anything, so a skill deleted upstream would
-          # linger here forever as a stale copy that still looks current. The manifest
-          # records what previous runs installed, so only those are eligible for removal
-          # — files the project added itself are never touched.
+          # otherwise look current. Automated sync keeps stale entries in the manifest
+          # and opens a review warning instead of deleting target content. Confirmed
+          # pruning is handled by the interactive /sync workflow.
           MANIFEST=.claude/.ai-dev-synced
           if [ -f "$MANIFEST" ]; then
             for s in $(jq -r '.skills[]?' "$MANIFEST"); do
-              grep -qxF "$s" /tmp/synced-skills || { echo "prune skill $s"; rm -rf ".claude/skills/$s"; }
+              grep -qxF "$s" /tmp/synced-skills || {
+                echo "::warning::stale managed skill requires reviewed prune: $s"
+                echo "$s" >> /tmp/synced-skills
+              }
             done
             for a in $(jq -r '.agents[]?' "$MANIFEST"); do
-              grep -qxF "$a" /tmp/synced-agents || { echo "prune agent $a"; rm -f ".claude/agents/$a"; }
+              grep -qxF "$a" /tmp/synced-agents || {
+                echo "::warning::stale managed agent requires reviewed prune: $a"
+                echo "$a" >> /tmp/synced-agents
+              }
             done
             for r in $(jq -r '.rules[]?' "$MANIFEST"); do
-              grep -qxF "$r" /tmp/synced-rules || { echo "prune rule $r"; rm -f ".claude/rules/$r"; }
+              grep -qxF "$r" /tmp/synced-rules || {
+                echo "::warning::stale managed rule requires reviewed prune: $r"
+                echo "$r" >> /tmp/synced-rules
+              }
             done
           fi
           mkdir -p .claude
@@ -168,7 +193,8 @@ jobs:
             --argjson skills "$(to_json /tmp/synced-skills)" \
             --argjson agents "$(to_json /tmp/synced-agents)" \
             --argjson rules  "$(to_json /tmp/synced-rules)" \
-            '{skills: $skills, agents: $agents, rules: $rules}' > "$MANIFEST"
+            --arg adapters "${{ matrix.adapters }}" \
+            '{skills: $skills, agents: $agents, rules: $rules, adapters: ($adapters | split(" "))}' > "$MANIFEST"
 
       - name: Configure git
         working-directory: target
@@ -189,7 +215,9 @@ jobs:
         id: changes
         working-directory: target
         run: |
-          git add .claude/ .github/
+          git add -A -- .claude .github
+          [ ! -e .agents ] || git add -A -- .agents
+          [ ! -e AGENTS.md ] || git add -- AGENTS.md
           git diff --cached --quiet && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create PR
@@ -201,7 +229,7 @@ jobs:
           DEFAULT_BRANCH="${{ steps.default-branch.outputs.branch }}"
           BRANCH="sync/ai-dev-template-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
-          git add .claude/ .github/
+          git add .claude/ .agents/ .github/ AGENTS.md
           git commit -m "Sync ai-dev-template common + ${{ matrix.layers }} layer files"
           git push -u origin "$BRANCH"
           FILES=$(git diff --name-only HEAD~1)

@@ -1,149 +1,154 @@
-# UX Audit Reference — Detailed Criteria
+# UX Audit Reference
 
-Detailed evaluation criteria for the four analysis agents in SKILL.md Phase 2.
+Use only the sections relevant to the selected mode and flow.
 
 ## Contents
-- Nielsen's 10 Usability Heuristics
-- WCAG 2.2 AA Checklist (Key Items)
-- Platform-Specific Checks
 
----
+- Finding quality and precedence
+- UX lenses
+- WCAG 2.2 AA checks
+- Platform checks
 
-## Nielsen's 10 Usability Heuristics
+## Primary standards
 
-### 1. Visibility of System Status
-- Loading indicators present for async operations
-- Progress feedback for multi-step processes
-- Clear indication of current state (selected tab, active page)
-- Network/offline status communicated
+- [WCAG 2.2 Recommendation](https://www.w3.org/TR/WCAG22/)
+- [What's New in WCAG 2.2](https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/)
+- [WCAG 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum)
+- [Apple accessibility guidance](https://developer.apple.com/design/human-interface-guidelines/accessibility)
+- [Android accessibility guidance](https://developer.android.com/guide/topics/ui/accessibility)
 
-### 2. Match Between System and Real World
-- Labels use user-familiar language (not technical jargon)
-- Icons are recognizable and standard
-- Information organized in natural/logical order
-- Date/time/currency formats match user locale
+Check the current primary source when a criterion, exception, or platform recommendation determines severity.
 
-### 3. User Control and Freedom
-- Back/undo actions available and easy to find
-- Cancel option for destructive processes
-- Easy navigation to previous state
-- No dead-end screens
+## Finding quality and precedence
 
-### 4. Consistency and Standards
-- Same action = same result across screens
-- Consistent terminology throughout
-- Standard platform patterns used (navigation, gestures)
-- Visual consistency (colors, fonts, spacing)
+Judge against sources in this order:
 
-### 5. Error Prevention
-- Confirmation dialogs for destructive actions
-- Input validation before submission
-- Disabled states for invalid actions
-- Smart defaults that reduce input errors
+1. User goal and explicit brief
+2. Project design system, tokens, components, and established flows
+3. Platform conventions
+4. General usability and visual-design heuristics
+5. Reviewer preference — context only, never a defect by itself
 
-### 6. Recognition Rather Than Recall
-- Options visible (not hidden behind gestures)
-- Recent/suggested items shown
-- Labels on icons (not icon-only)
-- Search and filter available for long lists
+Good feedback is specific, explains user impact, names its evidence, proposes a bounded alternative, acknowledges
+what works, and matches the product's maturity. Preserve effective patterns while fixing the problem.
 
-### 7. Flexibility and Efficiency of Use
-- Shortcuts for power users
-- Customizable frequent actions
-- Batch operations where applicable
-- Quick actions (long press, swipe)
+Classify evidence:
 
-### 8. Aesthetic and Minimalist Design
-- No irrelevant information on screen
-- Visual hierarchy guides the eye
-- Adequate whitespace
-- Content-to-chrome ratio is high
+- **observed** — reproduced in the running product or measured directly
+- **likely** — supported by code or a screenshot but not exercised
+- **unverified** — plausible, but required evidence is unavailable
 
-### 9. Help Users Recognize, Diagnose, and Recover from Errors
-- Error messages in plain language (not error codes)
-- Specific problem identification
-- Constructive suggestion for resolution
-- Retry/recovery action available
+## UX lenses
 
-### 10. Help and Documentation
-- Onboarding for first-time users
-- Contextual help available
-- FAQ/help accessible from the app
-- Tooltips for complex features
+### First impression
 
----
+- Is the screen's purpose clear within two seconds?
+- Does attention land on the intended content or primary action?
+- Is the next step obvious without recalling prior instructions?
 
-## WCAG 2.2 AA Checklist (Key Items)
+### Nielsen's ten heuristics
+
+1. **Visibility of system status** — async progress, selection, save state, network state, completion feedback.
+2. **Match with the real world** — user language, familiar concepts, locale-aware formats, natural order.
+3. **User control and freedom** — back, cancel, undo, escape, and recovery from accidental actions.
+4. **Consistency and standards** — terminology, interaction, platform patterns, and design-system use.
+5. **Error prevention** — constraints, validation, confirmation proportional to consequence, safe defaults.
+6. **Recognition over recall** — visible choices, labels, history, suggestions, and contextual guidance.
+7. **Flexibility and efficiency** — shortcuts or bulk actions only where repeated use justifies them.
+8. **Aesthetic and minimalist design** — clear hierarchy and relevant content, not a specific visual taste.
+9. **Error recognition and recovery** — plain explanation, retained input, retry, and a viable next action.
+10. **Help and documentation** — contextual help for genuinely unfamiliar or complex tasks.
+
+Also inspect task entry, information architecture, trust and reassurance, empty/default states, copy/CTA outcome,
+and whether destructive or irreversible effects are clear before commitment.
+
+## WCAG 2.2 AA checks
+
+Use the normative criterion and its exceptions when assigning a violation. This list is a route, not a substitute
+for the standard.
 
 ### Perceivable
-- [ ] Text alternatives for images (alt text / contentDescription / accessibilityLabel)
-- [ ] Captions for video/audio content
-- [ ] Color contrast: 4.5:1 for normal text, 3:1 for large text
-- [ ] Content readable without color (don't use color alone to convey info)
-- [ ] Text resizable to 200% without loss of content
+
+- 1.1.1 text alternatives for meaningful non-text content
+- 1.2.x captions and alternatives for relevant time-based media
+- 1.3.1/1.3.2 semantic structure and meaningful reading sequence
+- 1.3.4 orientation and 1.3.5 input purpose
+- 1.4.1 information not conveyed by color alone
+- 1.4.3 text contrast: 4.5:1 normal, 3:1 large text
+- 1.4.10 reflow and 1.4.11 non-text contrast
+- 1.4.12 text spacing and 1.4.13 hover/focus content
 
 ### Operable
-- [ ] All functionality available via keyboard/switch access
-- [ ] Focus order is logical (top-to-bottom, left-to-right)
-- [ ] Focus indicator visible
-- [ ] Touch target minimum: 44x44pt (iOS) / 48x48dp (Android) / 24x24px (web)
-- [ ] No time limits (or user can extend)
-- [ ] Skip navigation available (web)
+
+- 2.1.1 keyboard operation and 2.1.2 no keyboard trap
+- 2.2.x timing controls where a time limit exists
+- 2.3.1 flashing limits
+- 2.4.1 bypass blocks; 2.4.3 focus order; 2.4.7 focus visible
+- 2.4.11 focus not obscured (minimum)
+- 2.5.1 pointer gestures; 2.5.2 pointer cancellation; 2.5.3 label in name
+- 2.5.7 dragging movements have a non-drag alternative
+- 2.5.8 target size (minimum): 24 by 24 CSS px or sufficient spacing, subject to equivalent, inline,
+  user-agent-control, essential, and other normative exceptions
+
+Do not present 44 by 44 CSS px as the WCAG AA minimum. It is the enhanced AAA target in 2.5.5 and may still be
+a useful product target. Keep Apple 44pt and Android 48dp guidance labeled as platform guidance.
 
 ### Understandable
-- [ ] Language of page declared
-- [ ] Input purpose identifiable (autocomplete attributes)
-- [ ] Error identified and described in text
-- [ ] Labels associated with form inputs
+
+- 3.1.1 page language and 3.1.2 language of parts
+- 3.2.1/3.2.2 predictable changes on focus and input
+- 3.2.3 consistent navigation; 3.2.4 consistent identification; 3.2.6 consistent help
+- 3.3.1 error identification; 3.3.2 labels/instructions; 3.3.3 error suggestions; 3.3.4 error prevention
+- 3.3.7 redundant entry and 3.3.8 accessible authentication (minimum)
 
 ### Robust
-- [ ] Valid markup / proper component usage
-- [ ] Name, role, value available to assistive tech
-- [ ] Status messages available to screen readers
 
----
+- 4.1.2 programmatic name, role, value
+- 4.1.3 status messages exposed without moving focus
 
-## Platform-Specific Checks
+### Test methods
 
-### Android (Jetpack Compose)
+Record which were actually run:
 
-| Check | What to look for | Severity |
-|-------|-----------------|----------|
-| contentDescription | `Image`, `Icon`, `IconButton` without contentDescription | Warning |
-| Touch target | `Modifier.clickable` area < 48.dp | Warning |
-| Material3 | Custom components where M3 equivalent exists | Suggestion |
-| Theme usage | Hardcoded colors instead of MaterialTheme.colorScheme | Warning |
-| Font scaling | Fixed `sp` sizes that don't scale with system settings | Warning |
-| Preview | `@Preview` missing for screen Composables | Suggestion |
-| Loading state | No loading indicator during data fetch | Warning |
-| Error state | Missing error UI for failed operations | Warning |
-| Empty state | No message when list is empty | Suggestion |
-| Navigation | Inconsistent back handling | Warning |
+- existing automated accessibility suite
+- keyboard-only traversal and focus visibility
+- TalkBack, VoiceOver, or NVDA traversal
+- computed contrast measurement
+- 200% text zoom and 400% reflow where applicable
+- reduced motion and system text-size settings
+- error, validation, loading, empty, and status-message behavior
 
-### iOS (SwiftUI)
+## Platform checks
 
-| Check | What to look for | Severity |
-|-------|-----------------|----------|
-| accessibilityLabel | `Image`, `Button` without .accessibilityLabel | Warning |
-| Touch target | `.frame()` < 44pt for tappable elements | Warning |
-| Dynamic Type | `.font(.system(size:))` instead of `.font(.body)` etc. | Warning |
-| Safe areas | Content behind notch/home indicator | Critical |
-| SF Symbols | Custom icons where SF Symbols equivalent exists | Suggestion |
-| Navigation | Non-standard navigation patterns | Warning |
-| Loading state | No ProgressView during async operations | Warning |
-| Error state | Missing error alert/view | Warning |
-| Empty state | No ContentUnavailableView for empty lists | Suggestion |
+### Android / Compose
 
-### Web (React/Vue/Svelte)
+- Semantics and meaningful labels; decorative images excluded appropriately
+- 48dp recommended interactive target or documented alternative
+- Font scaling, TalkBack order, edge-to-edge and insets
+- Project theme/tokens before generic Material defaults
+- Loading, empty, error, offline, and permission states
 
-| Check | What to look for | Severity |
-|-------|-----------------|----------|
-| Semantic HTML | `div` with onClick instead of `button` | Warning |
-| Alt text | `img` without `alt` attribute | Warning |
-| ARIA | Interactive custom components without ARIA roles | Warning |
-| Focus management | Modal/dialog without focus trap | Warning |
-| Form labels | `input` without associated `label` | Warning |
-| Responsive | No media queries or container queries | Suggestion |
-| Design tokens | Hardcoded hex colors instead of CSS variables/tokens | Suggestion |
-| Loading state | No skeleton/spinner during data fetch | Warning |
-| Error boundary | Missing error boundary for async components | Warning |
+### iOS / SwiftUI
+
+- Accessibility label/value/hint and traits appropriate to the control
+- 44pt recommended hit target or documented alternative
+- Dynamic Type, VoiceOver order, safe areas, Reduce Motion
+- Native navigation and recovery expectations where they serve the task
+- Loading, empty, error, offline, and permission states
+
+### React Native
+
+- `accessibilityLabel`, `accessibilityRole`, state/value, and decorative image handling
+- Platform target guidance, Dynamic Type/font scaling, screen-reader order
+- Safe areas, keyboard avoidance, platform back behavior, reduced motion
+- Avoid fixed heights that fail with translated or enlarged text
+
+### Web
+
+- Native semantic elements before ARIA; links for navigation and buttons for actions
+- Associated labels, descriptions, errors, autocomplete, and status announcements
+- Dialog focus entry/containment/return, escape behavior, and background inertness
+- Keyboard access, skip mechanism where repeated blocks justify it, visible unobscured focus
+- Responsive reflow, zoom, text spacing, pointer alternatives, and target-size exceptions
+- Use the project's component and token system; a hardcoded value is a finding only when it causes inconsistency,
+  bypasses a deliberate token contract, or harms the audited outcome

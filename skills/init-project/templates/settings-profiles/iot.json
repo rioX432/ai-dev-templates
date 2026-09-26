@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest)",
+      "Bash(python -m pytest)",
+      "Bash(python3 -m pytest)",
+      "Bash(platformio test)",
+      "Bash(pio test)",
+      "Bash(cmake --build build)"
+    ]
+  }
+}

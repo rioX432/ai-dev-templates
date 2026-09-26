@@ -1,4 +1,10 @@
 {
+  "schema_version": 2,
+  "default_adapters": [
+    "claude",
+    "codex"
+  ],
+  "hook_policy": "manual",
   "projects": {
     "CivitDeck": {
       "path": "../CivitDeck",
@@ -67,6 +73,7 @@
     "investigate",
     "issue",
     "monitor",
+    "orchestrate",
     "pr",
     "review",
     "think",
@@ -88,7 +95,6 @@
     "behavior.md",
     "coding-conventions.md"
   ],
-  "sync_hooks": true,
   "layer_types": {
     "kmp": {
       "agents": [

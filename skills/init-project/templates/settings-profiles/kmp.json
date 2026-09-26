@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew test)",
+      "Bash(./gradlew check)",
+      "Bash(./gradlew lint)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(swift test)",
+      "Bash(ktlint --relative *)",
+      "Bash(swiftlint lint *)",
+      "Bash(adb devices)"
+    ]
+  }
+}

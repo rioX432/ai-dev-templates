@@ -4,7 +4,7 @@ description: "React Native performance reviewer for changed files. Detects re-re
 tools: Read, Grep, Glob
 model: sonnet
 maxTurns: 20
-permissionMode: bypassPermissions
+permissionMode: plan
 ---
 
 # React Native Performance Reviewer

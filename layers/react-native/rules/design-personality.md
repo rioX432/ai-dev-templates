@@ -1,121 +1,67 @@
-# Design Personality — Beyond Platform Defaults
+# Design Personality — Project-grounded React Native UI
 
-Platform defaults produce generic, template-like UIs. This rule defines how to create polished, distinctive interfaces in React Native.
+Distinctiveness comes from a coherent product point of view, not from replacing every platform default. Apply
+this rule only after accessibility, the explicit brief, and the project's existing design system.
 
-**Philosophy: iOS HIG's "deference to content" — UI should not shout. Content is the star.**
+## Decision order
 
-## Token Overrides
+1. Accessibility and the user's task
+2. Explicit product brief and brand requirements
+3. Existing project tokens, components, and interaction patterns
+4. iOS and Android conventions for the surface
+5. Deliberate visual exploration
 
-### Typography
-- **Do NOT rely on system default fonts** — they look like every other app
-- Use a modern alternative: Inter, Pretendard, Plus Jakarta Sans, or project-specific brand font
-- Load custom fonts via `expo-font` or `useFonts` hook
-- Tighten the typescale to **5-7 levels**:
-  - Display (hero text only)
-  - Headline (section headers)
-  - Title (card/list headers)
-  - Body (main content)
-  - Label (captions, chips, buttons)
-- Letter spacing: tighter than defaults (-0.02em to 0em)
-- Noto Sans JP for Japanese text
+A system font, color count, radius, shadow, spacing value, press treatment, or easing curve is not wrong merely
+because another choice is more fashionable. Flag it only when it breaks an earlier source in this order or
+creates measurable inconsistency, ambiguity, or task friction.
 
-### Color
-- **Single accent color** for CTAs and links only — do NOT spread primary across surfaces
-- Surfaces: high-neutral palette (grays, not colored surfaces)
-- Dark mode: `#121212` to `#1C1C1E` (not pure black `#000000`)
-- Define all colors as design tokens in `constants/tokens.ts`
+## Establish a visual direction
 
-### Corner Radius
-- **Unified radius**: 12 for all components (cards, buttons, dialogs, sheets)
-- Small elements (chips, badges): 8
-- Full round: FAB only
-- No per-component radius variation
+Before introducing a new visual language, identify:
 
-### Shadows
-- Use subtle, layered shadows:
-  ```tsx
-  const softShadow = {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  };
-  ```
-- Shadow = "feel it, don't see it"
+- the product purpose and intended feeling
+- the content or action that should dominate attention
+- the existing token and component vocabulary
+- one or two intentional differentiators, such as typography, imagery, composition, or motion
 
-### Press Indication
-- Do NOT use default opacity reduction (feels cheap)
-- Use subtle background alpha change:
-  ```tsx
-  <Pressable style={({ pressed }) => [
-    styles.button,
-    pressed && { backgroundColor: 'rgba(0,0,0,0.04)' }
-  ]}>
-  ```
-- Or use Reanimated for smooth press animations
+Keep the rest restrained. Avoid both unmodified starter-template styling and arbitrary novelty.
 
-### Animation & Motion
-- Use iOS-inspired easing via Reanimated:
-  ```tsx
-  withTiming(value, {
-    duration: 280,
-    easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
-  })
-  ```
-- Duration: 250-350ms
-- Spring animations:
-  ```tsx
-  withSpring(value, { damping: 15, stiffness: 400 })
-  ```
-- Shared element transitions: use Expo Router's built-in support
+## Tokens and components
 
-### Spacing
-- **8pt grid, strictly enforced** — only these values:
-  - 4 / 8 / 12 / 16 / 24 / 32 / 48
-- No arbitrary values (no 10, 14, 20)
-- Section gaps: 24 or 32
-- List item spacing: 8 or 12
-- Screen horizontal padding: 16 (consistent across all screens)
-- Define as `spacing` object in tokens
+- Express repeated typography, color, spacing, shape, elevation, and motion choices as project tokens.
+- Reuse accessible native or project components when they satisfy the task. Customize their tokens before
+  building bespoke controls.
+- Preserve platform target sizes, roles and labels, focus/pressed states, font scaling, contrast, and
+  reduced-motion behavior when customizing.
+- Use a spacing rhythm and radius family rather than one mandatory grid or radius. Exceptions are acceptable when
+  the content or component geometry explains them.
+- Fonts, shadows, borders, and surface colors are product decisions. Test them on both platforms, light/dark
+  themes, translated text, and large text rather than banning or requiring one style globally.
 
-### Content Density
-- List row height: 48 (not platform default 56)
-- Card internal padding: 12 to 16
-- Embrace whitespace — it's part of the design, not wasted space
+## Motion and feedback
 
-## Component Rules
+- Motion should explain state change, hierarchy, continuity, or direct manipulation.
+- Keep decorative motion subordinate to task completion and honor reduced-motion preferences.
+- Every interactive control needs perceivable pressed, focused, disabled, loading, success, and error feedback as
+  applicable. A custom press treatment must remain at least as discoverable as the native default.
 
-### Navigation
-- Bottom tabs: max 5 items, icons + labels always visible
-- Header: large title with collapse behavior for content screens (Expo Router `headerLargeTitle`)
-- No drawer unless absolutely necessary (prefer bottom sheet)
+## Content states
 
-### Cards
-- Minimal elevation — use subtle border (`borderWidth: 0.5, borderColor: 'rgba(0,0,0,0.08)'`) instead of shadow
-- Or: background color differentiation only (no border, no shadow)
-- Content-first: image/data prominent, chrome minimal
+Design loading, empty, error, offline, permission, and partial-content states as part of the flow. Choose skeleton,
+spinner, inline feedback, illustration, or full-screen treatment according to expected duration and user action;
+no single treatment is universally correct.
 
-### Buttons
-- Primary: filled, single accent color, borderRadius 12
-- Secondary: outlined or text-only, never filled with secondary color
-- Destructive: red accent, text-only or outlined (never large filled red button)
+## Reference-driven work
 
-### Empty / Loading / Error States
-- Empty: illustration + message + single CTA (not just text)
-- Loading: skeleton shimmer (not ActivityIndicator) for content areas
-- Error: inline message + retry, not full-screen error
+Use references to communicate a property, not to copy a brand:
 
-## Reference-Driven Design
+- Name what is relevant: hierarchy, density, content treatment, typography, motion, or navigation.
+- Compare the reference with project tokens and platform behavior.
+- Keep assets and interaction patterns original unless the user has rights and explicitly asks for faithful
+  reproduction.
 
-When implementing a new screen:
-1. Find 2-3 reference screenshots from polished apps (Mobbin, App Store, competitor)
-2. Include screenshots in the prompt to Claude Code
-3. Specify: "Match this visual density and spacing, adapt to our design tokens"
-4. Do NOT say "make it look like X app" — say what specifically to match (spacing, hierarchy, density)
+## Review boundary
 
-## What This Rule Does NOT Cover
-
-- Brand identity (logo, brand colors, illustrations) — project-specific
-- Platform-specific adaptations (iOS vs Android nav patterns) — mobile-conventions.md
-- Accessibility requirements (touch targets, contrast) — mobile-conventions.md + ui-reviewer agent
+This rule guides implementation and optional brand-fit critique. Accessibility requirements belong to the
+platform conventions and the UI reviewer. A review finding must cite the project brief, token, component,
+platform rule, or observed user impact that the code violates.

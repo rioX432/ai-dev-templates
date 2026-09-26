@@ -1,51 +1,7 @@
-# {PROJECT_NAME}
+# Claude Code adapter
 
+@AGENTS.md
 @REVIEW.md
 
-## Project Overview
-<!-- 1-2 lines describing the project -->
-
-## Core Values
-<!-- Max 3. These filter ALL feature decisions. A new feature must directly strengthen one of these (one step, no indirect reasoning). -->
-<!-- 1. {What is the ONE thing this product does better than anything else?} -->
-<!-- 2. {Second most important} -->
-<!-- 3. {Optional: third} -->
-
-## Won't Do
-<!-- Features explicitly decided NOT to build, with reasons. Prevents re-proposal by audits. -->
-<!-- - **{Feature}**: {reason — e.g., "outside Core Value scope", "complexity cost too high"} -->
-
-## Commands
-<!-- Most important section: build, test, lint commands -->
-```
-./gradlew assembleDebug
-./gradlew test
-./gradlew detekt
-```
-
-## Architecture
-<!-- Module structure diagram -->
-```
-app/
-  ...
-```
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| ... | ... |
-
-## Think Twice
-- Requirements met?
-- Consistent with existing patterns?
-- Edge cases (null, empty, offline, error)?
-- No unverified assumptions?
-
-## Key Gotchas
-<!-- Add project-specific pitfalls as discovered during development -->
-<!-- Example: Detekt auto-correct changes import order → run twice -->
-
-## Language
-- Code comments, variable names: English
-- Commits: concise single line, English
+Keep shared project facts, commands, architecture, and safety boundaries in `AGENTS.md`. Add content here only
+when it genuinely applies to Claude Code and cannot be expressed in the provider-neutral project guidance.

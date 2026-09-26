@@ -1,6 +1,8 @@
 # ai-dev
 
-Claude Code plugin for AI-driven development workflows. Language-agnostic harness engineering — autonomous issue resolution, Codex-assisted technical design, context-isolated investigation, multi-agent code review, and structured review gating.
+Portable AI-development workflows with a Claude Code plugin adapter and rendered Codex Agent Skills adapter.
+The repository covers autonomous issue resolution, context-isolated investigation, independent design review, UI/UX
+auditing, and structured review gates.
 
 **Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
 
@@ -17,8 +19,8 @@ This plugin is **language-agnostic but not tracker-agnostic**. It assumes:
 | Assumption | Where it binds |
 |---|---|
 | **GitHub** is the issue tracker and code host, with the `gh` CLI authenticated | `issue`, `pr`, `dev`, `dev-all`, `audit`, `ux-audit`, `competitive-audit`, `monitor` |
-| The project has a `CLAUDE.md` naming its build/test/lint commands | every skill that runs a quality gate; there is an auto-detect fallback for Gradle, npm, Cargo, ruff and Flutter, but CLAUDE.md wins |
-| The project defines **Core Values** in `CLAUDE.md` | `competitive-audit` (hard gate), `issue`, `rules/ai-ops.md` |
+| The project documents build/test/lint commands in `AGENTS.md` or `CLAUDE.md` | every skill that runs a quality gate; repository guidance wins over auto-detection |
+| The project defines **Core Values** in its repository guidance | `competitive-audit` (hard gate), `issue`, `rules/ai-ops.md` |
 
 `/dev` can *read* a Linear issue (`XXX-1234`) through the Linear MCP, but every write path —
 issue creation, branch, PR, merge — is GitHub. A project on Jira or GitLab can use the
@@ -60,6 +62,7 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 |---|---|
 | `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
 | `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue in isolated sub-agent → evidence-based review validation → conditional merge |
+| `/ai-dev:orchestrate [goal]` | Lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
 | `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
@@ -68,9 +71,9 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
 | `/ai-dev:decompose` | Task decomposition into ordered subtasks + Codex architecture validation |
-| `/ai-dev:audit [scope]` | Codebase health audit with parallel scanners (debt / quality / architecture+performance / visual / deps) → GitHub Issues |
+| `/ai-dev:audit [scope]` | Evidence-gated codebase audit (debt / quality / architecture+performance / broken UI / security / deps) → optional GitHub Issues |
 | `/ai-dev:competitive-audit [focus]` | Core Value-filtered competitive analysis: user pain points → max 3 issues + Won't Do recording |
-| `/ai-dev:ux-audit [target]` | UI/UX comprehensive audit: heuristics, accessibility, visual, platform guidelines → GitHub Issues |
+| `/ai-dev:ux-audit [target]` | Evidence-based user-flow audit: current-run capture, UX, WCAG 2.2, responsive/platform checks, verification gaps → optional GitHub Issues |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
 | `/ai-dev:update-docs [scope]` | Documentation audit & update (architecture, changelog, readme, oss) |
 | `/ai-dev:sync` | Sync common files to target projects |
@@ -92,15 +95,17 @@ When this repo is pushed, GitHub Actions automatically creates PRs to sync commo
 | `source-verifier` | haiku | maxTurns: 30 | URL existence + claim consistency check |
 | `counter-argument` | sonnet | maxTurns: 15 | Proposal stress-test: counter-arguments, risks |
 
-Model tiers follow `rules/ai-ops.md → Model Selection for Agents`: `haiku` for mechanical collection, `sonnet` for review/analysis, `opus` for long-horizon implementation (dev-all sub-agents). Aliases track the latest generation automatically.
+Model tiers follow `rules/ai-ops.md → Model Selection for Agents`. Aliases are convenience defaults, not quality
+claims: record the resolved model and date in eval results, and use evals before moving a workflow to a smaller or
+newer model.
 
 ## Hooks
 
 | Event | Action |
 |---|---|
-| `PostToolUse` (Write/Edit) | Auto-lint: ktlint, swiftformat, eslint, ruff, jq (language auto-detected) |
+| `PostToolUse` (Write/Edit) | Synchronous, non-mutating validation: ktlint, swiftformat, eslint, ruff, dart, jq |
 | `PreToolUse` (Bash) | Block dangerous commands (force push, rm -rf, drop table, etc.) |
-| `PreToolUse` (Read/Edit) | Block secret file access (.env, credentials) |
+| `PreToolUse` (Read/Edit/Write/Bash) | Block direct secret-file access (.env, keys, credentials) as defense in depth |
 | `PostToolUseFailure` | Log failure patterns to `logs/failures/` for harness improvement |
 | `PreCompact` | Save critical context (branch, changed files, progress) before compaction |
 | `PostCompact` | Restore critical context (progress.txt) after compaction |
@@ -110,14 +115,55 @@ Model tiers follow `rules/ai-ops.md → Model Selection for Agents`: `haiku` for
 | `TaskCompleted` | Log task completion events |
 | `SessionEnd` | Session cleanup and final logging |
 
+Run `./scripts/test-hooks.sh` after changing a safety or logging hook. The fixtures cover reordered destructive
+flags, secret access through file and shell tools, valid JSONL, and non-persistence of raw tool/subagent content.
+
 ## Skill Evals
 
-Skills ship test cases in `skills/<name>/evals/evals.json`, following the official [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) schema. Current coverage: `dev`, `dev-all`, `issue`, `audit`, `review`, `dig`, `decompose`, `investigate`, `competitive-audit`, `clean-slop` — 3-4 evals each, targeting the failure mode the skill exists to prevent.
+Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
+`prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
+runner rejects an eval dir inside a loaded component directory. Coverage: 47 cases across 19 skills, including the
+high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
+targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
-How to run (skill-creator methodology):
-1. Spawn with-skill and without-skill (baseline) runs **in the same turn**, 3 runs per configuration
-2. Grade with a separate grader agent against each eval's `expectations` — require evidence per expectation, not a verdict
-3. **Record for every run: subject model, date, and skill commit hash** — numbers from unrecorded runs are not comparable
+Every case carries an `llm` criteria grader. Cases also use these when the failure mode supports them:
+
+- `graders/skill-fired.md` — a `tool_used` grader proving the skill actually loaded. The runner excludes it from
+  the score in the two-arm run, since it cannot pass without the plugin
+- a deterministic grader wherever the failure mode allows one — `orchestrate/fan-out-gate-refuses` asserts the
+  `Agent` tool was never used (`arm: both`, so the baseline is held to it too)
+
+Cases needing files to read seed them in `fixtures/` and list it in `case.yaml` under `context.add_dirs`; each run
+otherwise starts in an empty throwaway workspace.
+
+```bash
+# whole suite, one run per arm
+claude plugin eval . --runs 1 --judge-model sonnet --no-publish
+
+# one skill; --scaffold is required by cases that seed a fixture repository
+claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaffold --no-publish
+```
+
+- `--ablation with-without` is the default: each case runs with and without the plugin and the report shows the
+  delta. A skill whose score does not move is not paying for its tokens.
+- `--runs` defaults to 3. Use 1 for a quick check, 3 when the number has to mean something.
+- `--threshold <0..1>` turns it into a CI gate (exit 1 when a case scores below it).
+- **Pass `--judge-model sonnet`.** The default judge is Haiku, and it returned false FAILs on long, structured
+  responses here — it failed a plan that stated the integration gate verbatim. Sonnet scored the same response
+  1.0. Criteria with several conjunctive conditions need the stronger judge.
+- `--case` is not repeatable: a second one replaces the first. Use one glob.
+- A case that needs a repository to reason about seeds it in `setup.sh` and only runs under `--scaffold`; each run
+  otherwise starts in an empty throwaway workspace and the agent correctly refuses to plan against nothing.
+- A slash-invoked skill is expanded inline and never calls the `Skill` tool, so `tool_used: Skill` cannot pass for
+  a skill with `disable-model-invocation`. Those cases prove the skill fired through the with/without delta
+  instead.
+- `--allow-tools Bash` cannot run on a machine whose Docker credential store (`~/.docker`) contains a symlink —
+  Docker Desktop's own `cli-plugins` links are enough to block it. Cases here stay within read-only tools plus
+  `Write`/`Edit` where the behaviour needs them.
+- Record the subject model, the judge model, the date, and the plugin commit next to any score you keep; runs from
+  different models are not comparable.
+
+Reference: [plugin evals documentation](https://code.claude.com/docs/en/plugin-evals.md).
 
 ## Feature Bloat Prevention
 
@@ -167,15 +213,21 @@ completion condition.
 
 This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-adoption-journey) principles:
 
-- **Deterministic feedback loops**: Hooks provide millisecond-level lint/format feedback — not dependent on LLM judgment
+- **Deterministic feedback loops**: Hooks provide fast, non-mutating syntax and lint feedback — not dependent on LLM judgment
+- **Trust-aware context**: web pages, issue bodies, source comments, and tool output are untrusted data; write and
+  external side effects remain separate from read-only discovery
 - **Context efficiency**: Skills are on-demand (loaded only when invoked), `context: fork` isolates token-heavy investigation, sub-agents provide context firewalls
 - **Progressive disclosure**: every SKILL.md body stays well under the 500-line budget; procedures, criteria and templates live in sibling reference files that load only when the workflow reaches them (`investigate/report-format.md` is shared by two skills, so the method exists once)
 - **Single writer per side effect**: only `issue` calls `gh issue create`; only `pr` opens PRs. Scanning skills produce findings and hand them over
-- **Convergent sync**: `/sync` and the CI workflow read the same `common_skills` list and run the same prune, so a skill deleted here disappears from every target instead of lingering as a stale copy. `.claude/.ai-dev-synced` in each target records what the template installed, so project-local skills are never touched
-- **Dual-model design**: Codex handles technical design exploration; Claude handles implementation, review, and codebase consistency — each model used for its strength
+- **One sync registry**: `sync-config.json` is schema-validated and generates the CI matrix; manual and automated
+  paths consume the same skills, agents, rules, layers, projects, and adapter selection
+- **Host adapters**: Claude keeps `.claude/skills` and host integrations; Codex receives portable-frontmatter skills
+  under `.agents/skills` plus a seed-only `AGENTS.md`. Claude hooks and named agents are not presented as Codex enforcement
+- **Independent design check**: Codex can challenge technical designs in a read-only pass; the primary agent owns
+  the decision and verifies it against the repository
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
-- **Language-agnostic**: Skills reference CLAUDE.md for project-specific commands, not hardcoded build tools
+- **Language-agnostic**: Skills resolve project-specific commands from repository guidance rather than hardcoding one build tool
 - **Depth over breadth**: Core Value filter + Won't Do registry prevent feature factory anti-pattern
 
 ### Architecture
@@ -244,6 +296,7 @@ ai-dev-templates/
 ├── .github/
 │   └── workflows/
 │       └── sync-to-projects.yml
+├── evals/                         ← claude plugin eval suite, <skill>/<case>/
 ├── skills/
 │   ├── dev/SKILL.md
 │   ├── dev-investigate/SKILL.md  ← context: fork, thin wrapper
@@ -258,8 +311,10 @@ ai-dev-templates/
 │   │   └── report-format.md       ← shared with dev-investigate
 │   ├── issue/                     ← single writer of GitHub Issues
 │   │   ├── SKILL.md
-│   │   ├── splitting.md           ← split moves + worked examples
-│   │   └── evals/evals.json
+│   │   └── splitting.md           ← split moves + worked examples
+│   ├── orchestrate/
+│   │   ├── SKILL.md
+│   │   └── references/            ← delegation brief, state contract, evidence
 │   ├── audit/SKILL.md
 │   ├── competitive-audit/
 │   │   ├── SKILL.md
@@ -296,6 +351,11 @@ ai-dev-templates/
 │   ├── block-secret-access.sh
 │   ├── log-failure.sh
 │   ├── log-subagent.sh           ← lifecycle event logger
+│   ├── test-hooks.sh              ← deterministic hook safety fixtures
+│   ├── render-codex-skill.py      ← portable Agent Skills frontmatter adapter
+│   ├── test-render-codex-skill.sh
+│   ├── sync-config.py             ← sync schema validation + CI matrix rendering
+│   ├── test-sync-config.sh
 │   ├── save-context.sh
 │   └── restore-context.sh
 ├── layers/                        ← composable: projects reference a list of layers
@@ -316,7 +376,7 @@ ai-dev-templates/
 │   └── iot/
 │       └── rules/iot-conventions.md
 └── rules/
-    ├── behavior.md              ← No Guessing + Codex usage
+    ├── behavior.md              ← evidence, trust boundaries, independent review
     ├── coding-conventions.md
     └── ai-ops.md                ← Core Value guard + Codex conditions + WIP limit
 ```

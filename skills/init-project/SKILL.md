@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(cp:*)
   - Bash(ls:*)
   - Bash(cat:*)
+  - Bash(python3:*)
   - AskUserQuestion
 ---
 
@@ -45,10 +46,17 @@ Copy the following from `${CLAUDE_SKILL_DIR}/templates/`:
 
 | Source | Destination | Action |
 |---|---|---|
-| `CLAUDE.md.template` | `$ARGUMENTS/CLAUDE.md` | Copy, prompt to fill in |
+| `AGENTS.md.template` | `$ARGUMENTS/AGENTS.md` | Seed canonical project guidance only when absent; otherwise show proposed additions and ask before merging |
+| `CLAUDE.md.template` | `$ARGUMENTS/CLAUDE.md` | Seed the thin Claude adapter only when absent; never replace project-specific overrides |
 | `REVIEW.md.template` | `$ARGUMENTS/REVIEW.md` | Copy as-is |
-| `settings.json.template` | `$ARGUMENTS/.claude/settings.json` | Copy as-is |
+| `settings.json.template` | `$ARGUMENTS/.claude/settings.json` | Copy the least-privilege base, then merge only the selected type's allow-list from `settings-profiles/{type}.json` |
 | `pull_request_template.md` | `$ARGUMENTS/.github/pull_request_template.md` | Copy as-is |
+
+The settings profile is an allow-list fragment, not a complete settings file. Merge its
+`permissions.allow` entries into the base without replacing `ask`, `deny`, `defaultMode`,
+`disableBypassPermissionsMode`, or the top-level `attribution` object.
+For `common-only`, add no profile. Do not broaden a profile to an arbitrary command wildcard; leave
+commands not listed here approval-gated and tell the user how to add a project-specific command later.
 
 ### 4. Copy Layer PR Template (if applicable)
 
@@ -67,11 +75,15 @@ Copy every skill listed in `skills/sync/sync-config.json` under `common_skills` 
 single source of truth as Step 6. Do not hardcode the list here; read it.
 
 ```
-$ARGUMENTS/.claude/skills/{skill}/   ← one directory per common_skills entry
+$ARGUMENTS/.claude/skills/{skill}/   ← Claude Code adapter
+$ARGUMENTS/.agents/skills/{skill}/   ← Codex / Agent Skills adapter
 ```
 
-Copy each skill **directory** (`cp -R`), not just its `SKILL.md` — reference files
-(`issue/splitting.md`), evals, and scripts are part of the skill.
+Copy each skill **directory** (`cp -R`) to the Claude adapter, not just its `SKILL.md` — reference files
+(`issue/splitting.md`) and scripts are part of the skill. Render the Codex adapter with
+`${TEMPLATE_ROOT}/scripts/render-codex-skill.py`, which preserves supporting files while reducing frontmatter to
+portable Agent Skills fields and adding host-capability guidance. Do not raw-copy Claude-only frontmatter into
+`.agents/skills`. Root-level `evals/` are plugin-development tests and are not copied into initialized projects.
 
 ### 6. Copy Common Agents and Rules
 
@@ -90,7 +102,7 @@ Write `$ARGUMENTS/.claude/.ai-dev-synced` listing what was installed, so later s
 a template file from one the project added itself:
 
 ```json
-{"skills": [...], "agents": ["security-reviewer.md", ...], "rules": ["behavior.md", ...]}
+{"skills": [...], "agents": ["security-reviewer.md", ...], "rules": ["behavior.md", ...], "adapters": ["claude", "codex"]}
 ```
 
 ### 8. Copy Layer-Specific Files (if $PROJECT_LAYERS is not empty)
@@ -162,7 +174,7 @@ Add the new project to `${CLAUDE_SKILL_DIR}/../sync/sync-config.json`:
 }
 ```
 
-Also add a matching matrix entry (`repo` + space-separated `layers`) to `.github/workflows/sync-to-projects.yml` so CI distribution covers the new project.
+The automated workflow derives its matrix from this config; do not edit a duplicate matrix.
 
 ### 12. Post-Setup Instructions
 
@@ -170,17 +182,19 @@ Also add a matching matrix entry (`repo` + space-separated `layers`) to `.github
 ## Setup Complete
 
 Files created:
-- CLAUDE.md ← Fill in project name, architecture, tech stack, commands
+- AGENTS.md ← Fill in project overview, values, architecture, and exact commands
+- CLAUDE.md ← Thin Claude adapter importing AGENTS.md and REVIEW.md
 - REVIEW.md ← Customize review criteria
-- .claude/settings.json ← Add project-specific permissions
-- .claude/skills/ ← Shared skills (synced from ai-dev-templates)
+- .claude/settings.json ← Least-privilege base + selected stack profile; add only required project commands
+- .claude/skills/ ← Claude Code skill adapter
+- .agents/skills/ ← Codex / Agent Skills adapter
 - .claude/agents/ ← Shared + layer ({PROJECT_LAYERS}) agents
 - .claude/rules/ ← Shared + layer ({PROJECT_LAYERS}) rules
 - .github/pull_request_template.md ← {PROJECT_LAYERS} layer template
 - .github/workflows/ ← Selected CI templates
 
 ## Next Steps
-1. Edit CLAUDE.md — fill in project details, especially Commands section
+1. Edit AGENTS.md — fill in project details, especially Commands and their success signals
 2. **Define design tokens** — choose brand font, accent color, and review design-personality.md
 3. Add project-specific agents to .claude/agents/ (e.g., kmp-reviewer.md)
 4. Add project-specific rules to .claude/rules/

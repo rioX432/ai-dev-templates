@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Auto-lint: runs the project's linter on saved files
+# Fast validation: checks a saved file without rewriting it
 # Called as PostToolUse hook for Write/Edit events
 #
 # The hook receives tool input as JSON on stdin.
@@ -20,43 +20,49 @@ fi
 # Get file extension
 EXT="${FILE_PATH##*.}"
 
-# Run appropriate linter based on file type
+# Run the appropriate checker. PostToolUse must not race with later reads or silently
+# rewrite the user's file; formatting remains an explicit workflow action.
+STATUS=0
 case "$EXT" in
   kt|kts)
     if command -v ktlint &>/dev/null; then
-      ktlint --format "$FILE_PATH" 2>/dev/null || true
+      ktlint "$FILE_PATH" || STATUS=$?
     fi
     ;;
   swift)
     if command -v swiftformat &>/dev/null; then
-      swiftformat "$FILE_PATH" 2>/dev/null || true
+      swiftformat --lint "$FILE_PATH" || STATUS=$?
     fi
     ;;
   js|jsx|ts|tsx|mjs|cjs)
-    # Try project-local eslint first, then global
     if [ -f "node_modules/.bin/eslint" ]; then
-      node_modules/.bin/eslint --fix "$FILE_PATH" 2>/dev/null || true
+      node_modules/.bin/eslint "$FILE_PATH" || STATUS=$?
     elif command -v eslint &>/dev/null; then
-      eslint --fix "$FILE_PATH" 2>/dev/null || true
+      eslint "$FILE_PATH" || STATUS=$?
     fi
     ;;
   py)
     if command -v ruff &>/dev/null; then
-      ruff format "$FILE_PATH" 2>/dev/null || true
-      ruff check --fix "$FILE_PATH" 2>/dev/null || true
+      ruff format --check "$FILE_PATH" || STATUS=$?
+      ruff check "$FILE_PATH" || STATUS=$?
     elif command -v black &>/dev/null; then
-      black "$FILE_PATH" 2>/dev/null || true
+      black --check "$FILE_PATH" || STATUS=$?
     fi
     ;;
   dart)
     if command -v dart &>/dev/null; then
-      dart format "$FILE_PATH" 2>/dev/null || true
+      dart format --output=none --set-exit-if-changed "$FILE_PATH" || STATUS=$?
     fi
     ;;
   json)
     if command -v jq &>/dev/null; then
-      TMP=$(mktemp)
-      jq . "$FILE_PATH" > "$TMP" 2>/dev/null && mv "$TMP" "$FILE_PATH" || rm -f "$TMP"
+      jq empty "$FILE_PATH" || STATUS=$?
     fi
     ;;
 esac
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "Validation reported issues in $FILE_PATH (exit $STATUS). The file was not modified."
+fi
+
+exit 0

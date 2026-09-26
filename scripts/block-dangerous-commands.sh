@@ -16,26 +16,20 @@ if [ -z "$COMMAND" ]; then
   exit 0
 fi
 
-# Patterns to block (case-insensitive matching)
+# This hook is defense in depth, not a substitute for sandboxing and least-privilege
+# permissions. Prefer broad, order-independent patterns for destructive command classes;
+# narrow spellings are easy to bypass with reordered or long-form flags.
 BLOCKED_PATTERNS=(
-  "rm -rf /"
-  "rm -rf ~"
-  "rm -rf \."
-  "git push.*--force.*main"
-  "git push.*--force.*master"
-  "git push.*-f.*main"
-  "git push.*-f.*master"
-  "git reset --hard"
-  "git clean -fd"
-  "git checkout \."
-  "git restore \."
-  "drop table"
-  "drop database"
-  "truncate table"
+  "(^|[;&|][[:space:]]*)rm[[:space:]]+(-[^[:space:]]*[rR][^[:space:]]*[fF]|-[^[:space:]]*[fF][^[:space:]]*[rR]|--recursive[[:space:]]+--force|--force[[:space:]]+--recursive)([[:space:]]|$)"
+  "(^|[;&|][[:space:]]*)git[[:space:]]+push([^;&|])*([[:space:]]--force([=[:space:]]|$)|[[:space:]]--force-with-lease([=[:space:]]|$)|[[:space:]]-f([[:space:]]|$))"
+  "(^|[;&|][[:space:]]*)git[[:space:]]+reset[[:space:]]+--hard([[:space:]]|$)"
+  "(^|[;&|][[:space:]]*)git[[:space:]]+clean[[:space:]]+-[^[:space:]]*[fdx]"
+  "(^|[;&|][[:space:]]*)git[[:space:]]+(checkout|restore)[[:space:]]+(--[[:space:]]+)?\.([[:space:]]|$)"
+  "(^|[;&|][[:space:]]*)(drop[[:space:]]+(table|database)|truncate[[:space:]]+table)([[:space:]]|$)"
   ":(){ :|:& };:"
-  "mkfs\."
-  "dd if="
-  "> /dev/sd"
+  "(^|[;&|][[:space:]]*)mkfs\."
+  "(^|[;&|][[:space:]]*)dd[[:space:]].*if="
+  ">[[:space:]]*/dev/(sd|disk|nvme)"
 )
 
 for PATTERN in "${BLOCKED_PATTERNS[@]}"; do

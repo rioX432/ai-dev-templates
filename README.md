@@ -230,7 +230,14 @@ claude plugin eval . --runs 1 --judge-model sonnet --no-publish
 
 # one skill; --scaffold is required by cases that seed a fixture repository
 claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaffold --no-publish
+
+# cases whose skill edits files need the operator grant, or Edit/Write are disabled in the run
+claude plugin eval . --case 'implement-guidance-*' --runs 1 --judge-model sonnet --scaffold --allow-tools Edit Write --no-publish
 ```
+
+`--case` takes one glob; when it is repeated, only the last one applies. Project agents seeded under a scaffold's
+`.claude/agents/` are not registered as agent types in eval runs, so a grader for one also accepts a
+general-purpose agent briefed with that file.
 
 - `--ablation with-without` is the default: each case runs with and without the plugin and the report shows the
   delta. A skill whose score does not move is not paying for its tokens.
@@ -269,7 +276,8 @@ guidance overrides every default. `standard` may hand `integration`, and `highRi
 CI check that passes on the same head commit. After a review fix, only the surface that fix touched is re-verified.
 
 `/review` (`coding.review`) uses the same classification for reviewer count: `fast` is reviewed by the coordinator
-alone (0 independent reviewers), `standard` adds at most one independent reviewer for a concrete signal, and
+alone (0 independent reviewers), `standard` adds at most one — the specialist whose surface the change touches,
+or a general reviewer for a concrete signal — and
 `highRisk` always has at least one. Security, UI, and performance specialists — including project reviewers in
 `.claude/agents/` — run only when the change touches their surface. Critical/Warning verification, deduplication,
 and Critical blocking are unchanged.

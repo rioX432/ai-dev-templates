@@ -270,7 +270,8 @@ Select and run the verification profile per [rules/verification.md](../../rules/
    `behavior-change`, `crosses-module-boundary`, `auth`, `public-contract` — into `fast`, `standard`, or
    `highRisk`. Diff size never lowers the profile.
 2. Run the tiers that profile requires (`focused`, `affected-module`, `integration`, `full`) plus the issue's
-   `Done when` commands exactly as written. Delegate a tier to CI only under the rule's delegation contract.
+   `Done when` commands exactly as written. Delegate a tier to CI only under the rule's delegation contract. No PR
+   exists yet, so a delegated tier is `pending` here; it is settled in Phase 8c, never assumed.
 3. Record the result as the rule's verification record; when `scripts/verification-gate.py` is available, run its
    `check` on the record and treat a non-zero exit as a failed gate.
 
@@ -369,6 +370,16 @@ Skill("pr", args: "Issue #{issue}. Base: {base}. Assumptions: {autonomous-mode d
 
 Report PR URL to the user.
 
+### 8c. Settle CI-delegated tiers
+
+Skip this when Phase 6 delegated nothing. Otherwise run `gh pr checks --required {PR_URL}` and, for each delegated
+tier, find the check named in its verification record:
+
+- Listed as required and passed on the PR's `headRefOid` → mark it `required: true`, set its `head_sha`, and re-run
+  `scripts/verification-gate.py check` when available
+- Pending → report verification as `pending-ci` with the check name; do not call the change verified
+- Failed, absent, or not required → the tier is unmet: run it locally on this head or report the failure
+
 Mark task 9 `completed`.
 
 ---
@@ -416,7 +427,8 @@ On completion, output a structured result for callers (e.g., `/dev-all`):
     "exit_code": 0,
     "success_signal": "{exact observed signal}",
     "output_excerpt": "{bounded excerpt containing the signal}",
-    "head_sha": "{git rev-parse HEAD after the final commit}"
+    "head_sha": "{git rev-parse HEAD after the final commit}",
+    "pending_ci": ["{required check names a delegated tier still waits on; empty when settled}"]
   },
   "review_json": "{absolute path of workspace/{issue}/review.json}",
   "assumptions": ["{question → chosen default, evidence}"],

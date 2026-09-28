@@ -179,7 +179,7 @@
         "codex": "native"
       },
       "contract_version": 1,
-      "content_hash": "sha256:28de91dd839e7526f580d7caf90893c9149ce9a0c11612ed5e27e724e9543dee"
+      "content_hash": "sha256:3b4629b1e088efde0104d51c2029c3cbe4696ef7bbe34f4c749a5918204b25b1"
     },
     {
       "id": "coding.cleanup",
@@ -249,7 +249,7 @@
         "review.security"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:2d6abb31ca5fd10877c6e7703cb88df856e3bdc9a86a81469ec007ef4d747d7b"
+      "content_hash": "sha256:e4924ea47af03afd36a3eee1ede727fc63430ad08717ee1fe38fca5ff1345937"
     },
     {
       "id": "review.security",
@@ -851,7 +851,7 @@
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:2456225dc6c2f8f316cb18cdc40da1bbf0c022781259f8d8ff4fc9fbf64e8946"
+      "content_hash": "sha256:903ce08a5dd86fd061e59115eabb13e153cf8d92bfa9394072f1f5d628004519"
     },
     {
       "id": "standalone.dev-investigate",
@@ -939,7 +939,7 @@
         "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:0faa1d57b7a257ca0eb0a4f362ef96055b0bc63dec975412bd1db43cf93e45c3"
+      "content_hash": "sha256:1f5ace3efb01058652ab9cd96b3ef5f36573c67120383f4ebb07b38994ce0feb"
     },
     {
       "id": "standalone.orchestrate",

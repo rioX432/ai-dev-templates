@@ -38,7 +38,8 @@ If both diffs are empty and there are no untracked source files, report "nothing
 3. Classify the change with the signals and profiles of [rules/verification.md → Classify the change](../../rules/verification.md)
    — `fast`, `standard`, or `highRisk`. Use the caller's profile when it already classified this change for
    verification; raise it if the diff shows a signal the caller missed. Judge semantics and affected boundaries:
-   a one-line change to token validation is `highRisk`, forty files of documentation are `fast`
+   a one-line change to token validation is `highRisk`, forty files of documentation are `fast`, and a change to
+   what users see or can interact with (layout, sizing, styles, visible copy) is `behavior-change`, never `fast`
 4. List the **surfaces** the change touches — security (auth, crypto, secrets, input handling, permissions), UI
    (components, screens, styles, accessibility), performance (hot paths, rendering, lists, I/O in loops), or a
    surface a project reviewer declares
@@ -51,11 +52,13 @@ applies them.
 | Profile | Independent reviewers | Specialists |
 |---|---|---|
 | `fast` | 0 — the coordinator (this session) reviews the diff itself | none |
-| `standard` | 0 or 1 — add one only for a concrete signal: `crosses-module-boundary`, `new-feature`, or a candidate Critical/Warning the coordinator cannot confirm alone | only for a matching surface |
+| `standard` | 0 or 1 — the matching specialist when the change touches a specialist's surface; otherwise Agent A only for a concrete signal: `crosses-module-boundary`, `new-feature`, or a candidate Critical/Warning the coordinator cannot confirm alone | the one whose surface the change touches, as that single reviewer |
 | `highRisk` | at least 1 — Agent A always; add Agent B for `public-contract`, `data-migration`, `cross-repository`, or `build-or-ci-config` | every matching surface |
 
 Launch all independent reviewers and specialists for one review in the same turn so they run concurrently. A
 reviewer that is not needed is not launched: its cost is tokens and wall-clock time with no expected finding.
+A `highRisk` review always launches its reviewers, even when the diff is the only evidence available; a coordinator
+pass never substitutes for them.
 
 ### Checklist A: Bug & Logic + Security
 ```
@@ -101,8 +104,9 @@ base, and returns findings only.
 - `perf-reviewer` — the performance surface, when the project provides one
 
 Check `.claude/agents/` for project-specific reviewers (e.g., `kmp-reviewer`, `ui-reviewer`) and read each one's
-description; launch it only when the changed files fall in the surface it declares. A specialist counts as an
-independent reviewer for the `highRisk` minimum.
+description; launch it only when the changed files fall in the surface it declares. If its agent type is not
+registered in this session, launch a general-purpose agent with that file's body as the brief. A specialist counts
+as an independent reviewer for the `highRisk` minimum.
 
 ## Step 3: Merge Findings
 

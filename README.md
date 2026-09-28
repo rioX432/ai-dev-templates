@@ -142,6 +142,35 @@ budgets. It does not invoke `/dev` as a Control Plane; the wrapper exists for ba
 The manifest is a provider contract. It is unrelated to `.claude/.ai-dev-synced`, which records what a sync copied
 into one target repository so pruning never touches project-owned files.
 
+### Provider consumption and sync
+
+A project consumes this library in one of two modes, set per project as `consumption` in
+`skills/sync/sync-config.json`:
+
+| Content | Owner | `sync` mode (default) | `provider` mode |
+|---|---|---|---|
+| Common skills, agents, rules, standalone and policy rules | provider-generic | copied into `.claude/` (and `.agents/skills`) | not copied; a resolver loads them from the capability manifest by reference |
+| Layer conventions and reviewers (`layers/`) | provider, per project type | copied | copied (no resolver exports them yet) |
+| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never overwritten (`AGENTS.md` is seeded only when missing) | same |
+
+`python3 scripts/sync-config.py plan --project <name>` prints the files a project receives, with their owner, and
+the capability IDs a `provider` project resolves. The workflow and `/sync` copy provider-generic content only in
+`sync` mode, and `./scripts/test-sync-config.sh` proves that applying a `provider` plan leaves no generic file in
+the target and that every workflow step reading a generic list is guarded.
+
+Staged migration for one project:
+
+1. Confirm the consumer (Buddy or another resolver) resolves the IDs from `plan` for that project and pins their
+   `content_hash`. Until it does, keep `sync`: provider discovery is the preferred path only once the resolver is
+   verified.
+2. Set `"consumption": "provider"` for that project. The next sync stops copying generic files; the ones already in
+   the target stay in `.claude/.ai-dev-synced` and are reported as stale, never deleted automatically.
+3. After a run under the resolver passes, prune the stale generic copies with `/sync` (Step 4b shows each removal
+   for confirmation). Standalone use in that repository then comes from the installed plugin.
+
+Rollback: remove `consumption` (or set it to `sync`). The next sync copies the generic files again and rewrites
+`.claude/.ai-dev-synced`; nothing repository-local is touched in either direction.
+
 ## Skills
 
 | Skill | Description |

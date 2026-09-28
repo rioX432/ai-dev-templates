@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Validate sync-config.json and render its GitHub Actions project matrix."""
+"""Validate sync-config.json, render its GitHub Actions project matrix, and plan one project's sync.
+
+Content ownership:
+- provider-generic: common skills, agents, and rules, plus standalone and policy rules. A project in
+  `provider` consumption resolves these from the capability manifest instead of receiving copies.
+- layer: project-type conventions and reviewers from layers/. No resolver exports them yet, so they are
+  synced in both modes.
+- repository-local: everything else in the target (AGENTS.md facts, project reviewers, exceptions). Sync
+  never writes it, apart from seeding AGENTS.md when it is missing.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +17,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+
+CONSUMPTION_MODES = {"sync", "provider"}
 
 
 class ConfigError(ValueError):
@@ -106,6 +117,8 @@ def load_and_validate(config_path: Path, source_root: Path) -> dict[str, Any]:
             raise ConfigError(
                 f"projects.{project_name}.adapters must include 'claude' during the adapter migration"
             )
+        if project.get("consumption", "sync") not in CONSUMPTION_MODES:
+            raise ConfigError(f"projects.{project_name}.consumption must be one of {sorted(CONSUMPTION_MODES)}")
 
     return config
 
@@ -117,14 +130,55 @@ def matrix(config: dict[str, Any]) -> list[dict[str, str]]:
             "repo": name,
             "layers": " ".join(project["layers"]),
             "adapters": " ".join(project.get("adapters", defaults)),
+            "consumption": project.get("consumption", "sync"),
         }
         for name, project in config["projects"].items()
     ]
 
 
+def exported_capabilities(source_root: Path) -> list[str]:
+    try:
+        manifest = json.loads((source_root / "capabilities/manifest.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ConfigError(f"cannot read the capability manifest: {exc}") from exc
+    # Policies are opted into by repository guidance, so a resolver adds them per repository.
+    return [entry["id"] for entry in manifest["capabilities"] if entry["kind"] == "capability"]
+
+
+def plan(config: dict[str, Any], source_root: Path, name: str) -> dict[str, Any]:
+    project = config["projects"].get(name)
+    if project is None:
+        raise ConfigError(f"unknown project {name!r}")
+    mode = project.get("consumption", "sync")
+    copies: list[dict[str, str]] = []
+    if mode == "sync":
+        for skill in config["common_skills"]:
+            copies.append({"owner": "provider-generic", "source": f"skills/{skill}", "destination": f".claude/skills/{skill}"})
+        for agent in config["common_agents"]:
+            copies.append({"owner": "provider-generic", "source": f"agents/{agent}.md", "destination": f".claude/agents/{agent}.md"})
+        for rule in config["common_rules"]:
+            copies.append({"owner": "provider-generic", "source": f"rules/{rule}", "destination": f".claude/rules/{rule}"})
+        for key in ("standalone_rules", "policy_rules"):
+            for destination, source in config.get(key, {}).items():
+                copies.append({"owner": "provider-generic", "source": source, "destination": f".claude/rules/{destination}"})
+    for layer in project["layers"]:
+        layer_root = source_root / "layers" / layer
+        for kind in ("agents", "rules"):
+            for file in sorted((layer_root / kind).glob("*.md")):
+                copies.append({"owner": "layer", "source": file.relative_to(source_root).as_posix(), "destination": f".claude/{kind}/{file.name}"})
+    return {
+        "project": name,
+        "consumption": mode,
+        "copy": copies,
+        "resolve": exported_capabilities(source_root) if mode == "provider" else [],
+        "seed": ["AGENTS.md"],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "matrix"))
+    parser.add_argument("command", choices=("validate", "matrix", "plan"))
+    parser.add_argument("--project", help="project name for plan")
     parser.add_argument("--config", type=Path, default=Path("skills/sync/sync-config.json"))
     parser.add_argument("--source-root", type=Path, default=Path("."))
     args = parser.parse_args()
@@ -135,6 +189,12 @@ def main() -> int:
         return 2
     if args.command == "matrix":
         print(json.dumps(matrix(config), separators=(",", ":")))
+    elif args.command == "plan":
+        try:
+            print(json.dumps(plan(config, args.source_root.resolve(), args.project or ""), indent=2))
+        except ConfigError as exc:
+            print(f"sync config error: {exc}", file=sys.stderr)
+            return 2
     else:
         print(f"sync config valid: {len(config['projects'])} projects")
     return 0

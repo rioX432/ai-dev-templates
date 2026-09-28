@@ -164,22 +164,25 @@ runner rejects an eval dir inside a loaded component directory. Coverage: 47 cas
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
-Every case carries an `llm` criteria grader. Cases also use these when the failure mode supports them:
+Every case carries at least one `llm` grader. Cases also use these when the failure mode supports them:
 
 - `graders/skill-fired.md` — a `tool_used` grader proving the skill actually loaded. The runner excludes it from
   the score in the two-arm run, since it cannot pass without the plugin
 - a deterministic grader wherever the failure mode allows one — `orchestrate/fan-out-gate-refuses` asserts the
-  `Agent` tool was never used (`arm: both`, so the baseline is held to it too)
+  `Agent` tool was never used and `dev/stop-at-turn-cap` that `Edit` was never used (`arm: both`, so the baseline
+  is held to it too); `regex` graders check the literal parts of a `/goal` condition (`dev/goal-from-repo-commands`,
+  `dev-all/goal-from-issue-list`) and the required sections of a written report
+  (`dev-investigate/self-contained-report`)
 
-Cases needing files to read seed them in `fixtures/` and list it in `case.yaml` under `context.add_dirs`; each run
+Cases needing a repository seed it in `setup.sh`, named by `context.scaffold_script` in `case.yaml`; each run
 otherwise starts in an empty throwaway workspace.
 
 ```bash
 # whole suite, one run per arm
-claude plugin eval . --runs 1 --judge-model sonnet --no-publish
+claude plugin eval . --runs 1 --judge-model sonnet --scaffold --allow-tools Write Edit --no-publish
 
-# one skill; --scaffold is required by cases that seed a fixture repository
-claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaffold --no-publish
+# one skill
+claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaffold --allow-tools Write Edit --no-publish
 ```
 
 - `--ablation with-without` is the default: each case runs with and without the plugin and the report shows the
@@ -189,15 +192,26 @@ claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaf
 - **Pass `--judge-model sonnet`.** The default judge is Haiku, and it returned false FAILs on long, structured
   responses here — it failed a plan that stated the integration gate verbatim. Sonnet scored the same response
   1.0. Criteria with several conjunctive conditions need the stronger judge.
+- The judge answers one word, PASS or FAIL, without reasoning, and a vote counts as PASS only when the reply has no
+  "FAIL" in it. On a long response, a rubric of three or more conjunctive items failed a correct `/goal` condition
+  6/6 while each item on its own passed it. Give each `llm` grader one item, and move any item that is a literal
+  string to a `regex` grader.
+- An `llm` grader reads only the final message unless it sets `focus`. When the graded behaviour can land earlier —
+  a gate decision before the edits, a summary followed by a reply to a background notification — use
+  `focus: trace`.
 - `--case` is not repeatable: a second one replaces the first. Use one glob.
 - A case that needs a repository to reason about seeds it in `setup.sh` and only runs under `--scaffold`; each run
   otherwise starts in an empty throwaway workspace and the agent correctly refuses to plan against nothing.
 - A slash-invoked skill is expanded inline and never calls the `Skill` tool, so `tool_used: Skill` cannot pass for
   a skill with `disable-model-invocation`. Those cases prove the skill fired through the with/without delta
   instead.
+- `Write` and `Edit` in a case's `allowed_tools` are granted only when the run passes `--allow-tools Write Edit`;
+  without it the runner removes them, and a case that must write a file or make an edit scores 0 whatever the
+  skill does. A skill's own `allowed-tools` does not count inside a run.
 - `--allow-tools Bash` cannot run on a machine whose Docker credential store (`~/.docker`) contains a symlink —
   Docker Desktop's own `cli-plugins` links are enough to block it. Cases here stay within read-only tools plus
-  `Write`/`Edit` where the behaviour needs them.
+  `Write`/`Edit`; where the behaviour is running a command (`dev/fresh-test-output`), the criteria accept naming
+  the exact command as the blocking next action and still fail stale or invented output.
 - Record the subject model, the judge model, the date, and the plugin commit next to any score you keep; runs from
   different models are not comparable.
 

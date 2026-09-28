@@ -246,16 +246,25 @@ jobs:
         run: |
           DEFAULT_BRANCH="${{ steps.default-branch.outputs.branch }}"
           BRANCH="sync/ai-dev-template-$(date +%Y%m%d-%H%M%S)"
+          # Projects whose framework has no layer (e.g. Flutter) receive common files only
+          LAYERS="${{ matrix.layers }}"
+          if [ -n "$LAYERS" ]; then
+            SCOPE="common + **$LAYERS** layer"
+            LABEL="$LAYERS"
+          else
+            SCOPE="common"
+            LABEL="common only"
+          fi
           git checkout -b "$BRANCH"
           git add .claude/ .agents/ .github/ AGENTS.md
-          git commit -m "Sync ai-dev-template common + ${{ matrix.layers }} layer files"
+          git commit -m "Sync ai-dev-template ${SCOPE//\*\*/} files"
           git push -u origin "$BRANCH"
           FILES=$(git diff --name-only HEAD~1)
           gh pr create \
-            --title "Sync ai-dev-template updates (${{ matrix.layers }})" \
+            --title "Sync ai-dev-template updates ($LABEL)" \
             --body "## Description
 
-          Automated sync of common + **${{ matrix.layers }}** layer files from ai-dev-templates.
+          Automated sync of $SCOPE files from ai-dev-templates.
 
           ### Updated files
           ${FILES}

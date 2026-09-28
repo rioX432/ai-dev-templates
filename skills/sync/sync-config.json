@@ -56,9 +56,7 @@
     },
     "viral-loc-monorepo": {
       "path": "../viral-loc-monorepo",
-      "layers": [
-        "kmp"
-      ]
+      "layers": []
     }
   },
   "common_skills": [

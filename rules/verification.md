@@ -91,11 +91,13 @@ key matches exactly:
 | `head_sha` | `git rev-parse HEAD` | a new commit, unless that commit is exactly the tree the evidence ran on |
 | `tier`, `command` | the check | any difference in the command text |
 | `surface`, `surface_fingerprint` | the paths the command's result depends on, and their content in the working tree | a wider or different surface; any content change under it, committed or not |
-| `config`, `config_fingerprint` | lockfiles and build/test configuration the command reads | any change to those files |
+| `config`, `config_fingerprint` | lockfiles, build/test configuration, and gitignored inputs (such as `.env`) the command reads, hashed from disk | any change to those files, including creating or deleting one |
 | `toolchain` | the versions of the runtimes and tools that run it (for example `node --version`) | any version change |
 
-- A surface lists every path the command reads that this change set can alter. Use `.` (the whole repository) for
-  `full`, and whenever you cannot bound it; a `.` surface is invalidated by any change.
+- A surface lists every path the command reads that this change set can alter, including shared code it imports.
+  Use `.` (the whole repository) for `full`, and whenever you cannot bound it; a `.` surface is invalidated by any
+  change to tracked or untracked files. The surface fingerprint cannot see gitignored files, so list any gitignored
+  input the command reads under `config`.
 - Within one HEAD, an edit outside a surface leaves that surface's evidence valid, which is what lets a review fix
   re-run only its own surface (section 5). Committing the verified working tree unchanged keeps the evidence; any
   other new HEAD invalidates it. Evidence is never carried to a commit with different content.

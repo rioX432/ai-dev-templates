@@ -175,6 +175,28 @@ python3 "$GATE" key --repo "$REPO" --tier affected-module --command "pnpm --filt
 test "$(decide narrow new-node)" = run
 test "$(reason new-node)" = "evidence[0]: toolchain changed"
 
+# a gitignored input declared as configuration invalidates evidence when it changes
+printf '.env\n' >"$REPO/.gitignore"
+printf 'API_URL=a\n' >"$REPO/.env"
+python3 "$GATE" key --repo "$REPO" --tier focused --command "$FOCUSED_CMD" --surface src/a.ts \
+  --config pnpm-lock.yaml .env --toolchain "node v22.1.0" >"$TMP/env-before.key"
+store env-before
+printf 'API_URL=b\n' >"$REPO/.env"
+python3 "$GATE" key --repo "$REPO" --tier focused --command "$FOCUSED_CMD" --surface src/a.ts \
+  --config pnpm-lock.yaml .env --toolchain "node v22.1.0" >"$TMP/env-after.key"
+test "$(decide env-before env-after)" = run
+test "$(reason env-after)" = "evidence[0]: config_fingerprint changed"
+
+# creating a declared configuration file that did not exist also invalidates
+python3 "$GATE" key --repo "$REPO" --tier focused --command "$FOCUSED_CMD" --surface src/a.ts \
+  --config .env.local --toolchain "node v22.1.0" >"$TMP/no-local.key"
+store no-local
+printf 'DEBUG=1\n' >"$REPO/.env.local"
+python3 "$GATE" key --repo "$REPO" --tier focused --command "$FOCUSED_CMD" --surface src/a.ts \
+  --config .env.local --toolchain "node v22.1.0" >"$TMP/with-local.key"
+test "$(decide no-local with-local)" = run
+rm "$REPO/.env.local"
+
 # failed runs and CI results are never reused
 key again affected-module "pnpm --filter app test" src/a.ts
 store narrow 1

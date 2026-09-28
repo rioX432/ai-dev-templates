@@ -5,47 +5,24 @@
   "description": "Fine-grained software engineering capabilities a resolver can load one at a time. Standalone entries are listed so they can be classified, never so a resolver can load them.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "provider",
-    "capabilities"
-  ],
+  "required": ["schema_version", "provider", "capabilities"],
   "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "schema_version": {
-      "const": 1
-    },
+    "$schema": {"type": "string"},
+    "schema_version": {"const": 1},
     "provider": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "id",
-        "version",
-        "repository"
-      ],
+      "required": ["id", "version", "repository"],
       "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*$"
-        },
-        "version": {
-          "type": "string",
-          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        },
-        "repository": {
-          "type": "string",
-          "pattern": "^https://"
-        }
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "repository": {"type": "string", "pattern": "^https://"}
       }
     },
     "capabilities": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/entry"
-      }
+      "items": {"$ref": "#/$defs/entry"}
     }
   },
   "$defs": {
@@ -65,42 +42,18 @@
         "content_hash"
       ],
       "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
-        },
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"},
         "kind": {
           "description": "capability: reusable HOW. policy: optional rules a repository opts into. standalone: a wrapper or tool for direct Claude/Codex use that a resolver must not load.",
-          "enum": [
-            "capability",
-            "policy",
-            "standalone"
-          ]
+          "enum": ["capability", "policy", "standalone"]
         },
-        "summary": {
-          "type": "string",
-          "minLength": 10
-        },
+        "summary": {"type": "string", "minLength": 10},
         "scope": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "unit",
-            "produces",
-            "excludes"
-          ],
+          "required": ["unit", "produces", "excludes"],
           "properties": {
-            "unit": {
-              "enum": [
-                "change",
-                "issue",
-                "repository",
-                "flow",
-                "topic",
-                "project",
-                "session"
-              ]
-            },
+            "unit": {"enum": ["change", "issue", "repository", "flow", "topic", "project", "session"]},
             "produces": {
               "enum": [
                 "report",
@@ -116,20 +69,10 @@
                 "orchestration"
               ]
             },
-            "excludes": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 3
-              },
-              "uniqueItems": true
-            }
+            "excludes": {"type": "array", "items": {"type": "string", "minLength": 3}, "uniqueItems": true}
           }
         },
-        "entrypoint": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9._/-]+\\.md$"
-        },
+        "entrypoint": {"type": "string", "pattern": "^[A-Za-z0-9._/-]+\\.md$"},
         "resources": {
           "type": "array",
           "minItems": 1,
@@ -137,45 +80,19 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "type",
-              "path"
-            ],
+            "required": ["type", "path"],
             "properties": {
-              "type": {
-                "enum": [
-                  "skill",
-                  "rule",
-                  "agent",
-                  "policy",
-                  "doc",
-                  "script"
-                ]
-              },
-              "path": {
-                "type": "string",
-                "pattern": "^[A-Za-z0-9._/-]+$"
-              }
+              "type": {"enum": ["skill", "rule", "agent", "policy", "doc", "script"]},
+              "path": {"type": "string", "pattern": "^[A-Za-z0-9._/-]+$"}
             }
           }
         },
         "authority": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "workspace",
-            "external",
-            "spawns_agents",
-            "user_interaction"
-          ],
+          "required": ["workspace", "external", "spawns_agents", "user_interaction"],
           "properties": {
-            "workspace": {
-              "enum": [
-                "none",
-                "read",
-                "write"
-              ]
-            },
+            "workspace": {"enum": ["none", "read", "write"]},
             "external": {
               "type": "array",
               "uniqueItems": true,
@@ -194,103 +111,47 @@
                 ]
               }
             },
-            "spawns_agents": {
-              "type": "boolean"
-            },
-            "user_interaction": {
-              "enum": [
-                "none",
-                "optional",
-                "required"
-              ]
-            }
+            "spawns_agents": {"type": "boolean"},
+            "user_interaction": {"enum": ["none", "optional", "required"]}
           }
         },
         "hosts": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "claude",
-            "codex"
-          ],
+          "required": ["claude", "codex"],
           "properties": {
-            "claude": {
-              "enum": [
-                "native",
-                "unsupported"
-              ]
-            },
-            "codex": {
-              "enum": [
-                "rendered",
-                "native",
-                "partial",
-                "unsupported"
-              ]
-            }
+            "claude": {"enum": ["native", "unsupported"]},
+            "codex": {"enum": ["rendered", "native", "partial", "unsupported"]}
           }
         },
         "composes": {
           "description": "Capabilities this entry may invoke. A capability or policy must not compose a standalone entry.",
           "type": "array",
           "uniqueItems": true,
-          "items": {
-            "type": "string"
-          }
+          "items": {"type": "string"}
         },
         "standalone": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "role",
-            "reason"
-          ],
+          "required": ["role", "reason"],
           "properties": {
-            "role": {
-              "enum": [
-                "composition-wrapper",
-                "control-plane",
-                "host-adapter",
-                "distribution"
-              ]
-            },
-            "reason": {
-              "type": "string",
-              "minLength": 10
-            }
+            "role": {"enum": ["composition-wrapper", "control-plane", "host-adapter", "distribution"]},
+            "reason": {"type": "string", "minLength": 10}
           }
         },
         "policy": {
           "description": "Required for, and only for, kind 'policy'. A policy is never part of a resolver's default context; a repository opts in.",
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "optional",
-            "activation",
-            "compatibility_default"
-          ],
+          "required": ["optional", "activation", "compatibility_default"],
           "properties": {
-            "optional": {
-              "const": true
-            },
-            "activation": {
-              "type": "string",
-              "minLength": 10
-            },
-            "compatibility_default": {
-              "type": "string",
-              "minLength": 10
-            }
+            "optional": {"const": true},
+            "activation": {"type": "string", "minLength": 10},
+            "compatibility_default": {"type": "string", "minLength": 10}
           }
         },
-        "contract_version": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "content_hash": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
-        }
+        "contract_version": {"type": "integer", "minimum": 1},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     }
   }

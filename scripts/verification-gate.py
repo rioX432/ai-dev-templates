@@ -164,6 +164,24 @@ def fingerprint(repo: Path, tree: str, paths: list[str]) -> str:
     return "sha256:" + hashlib.sha256(listing.encode()).hexdigest()
 
 
+def file_fingerprint(repo: Path, paths: list[str]) -> str:
+    # Configuration is often gitignored (.env, local overrides), which a tree object cannot see, so
+    # hash what is on disk. A missing path is part of the key, so creating it later invalidates.
+    digest = hashlib.sha256()
+    for relative in paths:
+        target = (repo / relative).resolve()
+        if not target.is_relative_to(repo.resolve()):
+            raise RecordError(f"config path {relative} is outside the repository")
+        if not target.exists():
+            digest.update(f"{relative}\0missing\n".encode())
+            continue
+        files = sorted(p for p in target.rglob("*") if p.is_file() and ".git" not in p.relative_to(repo.resolve()).parts) if target.is_dir() else [target]
+        for file in files:
+            name = file.relative_to(repo.resolve()).as_posix()
+            digest.update(f"{name}\0{hashlib.sha256(file.read_bytes()).hexdigest()}\n".encode())
+    return "sha256:" + digest.hexdigest()
+
+
 def evidence_key(repo: Path, tier: str, command: str, surface: list[str], config: list[str], toolchain: list[str]) -> dict[str, Any]:
     if tier not in TIER_ORDER:
         raise RecordError(f"unknown tier {tier!r}")
@@ -180,7 +198,7 @@ def evidence_key(repo: Path, tier: str, command: str, surface: list[str], config
         "surface": surface,
         "surface_fingerprint": fingerprint(repo, tree, surface),
         "config": config,
-        "config_fingerprint": fingerprint(repo, tree, config) if config else None,
+        "config_fingerprint": file_fingerprint(repo, config) if config else None,
         "toolchain": sorted(toolchain),
     }
 

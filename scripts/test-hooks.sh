@@ -23,6 +23,27 @@ assert_status() {
   fi
 }
 
+# grep exits 1 for "no match" and >1 for errors; only 1 may count as a pass.
+assert_not_logged() {
+  local path=$1
+  local message=$2
+  shift 2
+  local actual
+
+  set +e
+  grep -r -q -F "$@" "$path"
+  actual=$?
+  set -e
+
+  if [ "$actual" -eq 0 ]; then
+    echo "FAIL: $message"
+    exit 1
+  elif [ "$actual" -ne 1 ]; then
+    echo "FAIL: grep could not search $path (exit $actual)"
+    exit 1
+  fi
+}
+
 dangerous="$SCRIPT_DIR/block-dangerous-commands.sh"
 assert_status 2 "$dangerous" '{"tool_input":{"command":"git push origin main --force"}}'
 assert_status 2 "$dangerous" '{"tool_input":{"command":"rm -fr build-cache"}}'
@@ -39,18 +60,14 @@ assert_status 0 "$secrets" '{"tool_name":"Read","tool_input":{"file_path":"src/m
   printf '%s\n' '{"tool_name":"Bash","error":"bad \"quoted\" secret=do-not-log","tool_input":{"command":"curl -H Authorization:secret"}}' \
     | "$SCRIPT_DIR/log-failure.sh"
   jq empty logs/failures/*.jsonl
-  if rg -q 'do-not-log|Authorization:secret' logs/failures; then
-    echo "FAIL: failure log persisted sensitive input"
-    exit 1
-  fi
+  assert_not_logged logs/failures "failure log persisted sensitive input" \
+    -e 'do-not-log' -e 'Authorization:secret'
 
   printf '%s\n' '{"hook_event":"SubagentStop","agent_name":"reviewer","session_id":"abc","result":"private result"}' \
     | "$SCRIPT_DIR/log-subagent.sh"
   jq empty logs/subagents/*.jsonl
-  if rg -q 'private result' logs/subagents; then
-    echo "FAIL: lifecycle log persisted result content"
-    exit 1
-  fi
+  assert_not_logged logs/subagents "lifecycle log persisted result content" \
+    -e 'private result'
 )
 
 echo "Hook safety tests passed"

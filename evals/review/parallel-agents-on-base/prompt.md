@@ -1,8 +1,8 @@
 ---
 name: review-parallel-agents-on-base
-description: "Base branch resolved, commands run individually, both agents launched in parallel"
+description: "Base branch resolved, commands run individually, reviewers chosen by risk profile"
 tags: [review]
-expected_outcome: "Base branch resolved, commands run individually, both agents launched in parallel"
+expected_outcome: "Base branch resolved, commands run individually, reviewers chosen by risk profile"
 max_turns: 14
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill]

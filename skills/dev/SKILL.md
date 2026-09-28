@@ -296,7 +296,7 @@ Mark task 7 `completed`.
 
 Mark task 8 `in_progress`.
 
-Use the `/review` skill to run multi-agent parallel review.
+Use the `/review` skill, passing the Phase 6 verification profile and signals so reviewer count follows the same risk classification.
 
 ### Structured Review Output
 

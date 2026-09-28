@@ -149,7 +149,7 @@ into one target repository so pruning never touches project-owned files.
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
 | `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
-| `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
+| `/ai-dev:review` | Risk-profiled review: coordinator-only for fast, 0–1 independent reviewer for standard, independent reviewers for highRisk; specialists only on matching surfaces |
 | `/ai-dev:clean-slop [scope]` | Remove AI narration and change-history comments from the current change; comment text only. Runs as `/dev`'s cleanup pass |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
@@ -206,7 +206,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 50 cases across 20 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 53 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -263,6 +263,12 @@ build + test + lint gate for everything:
 The highest signal wins and diff size never lowers it. An issue's `Done when` commands always run, and repository
 guidance overrides every default. `standard` may hand `integration`, and `highRisk` may hand `full`, to a required
 CI check that passes on the same head commit. After a review fix, only the surface that fix touched is re-verified.
+
+`/review` (`coding.review`) uses the same classification for reviewer count: `fast` is reviewed by the coordinator
+alone (0 independent reviewers), `standard` adds at most one independent reviewer for a concrete signal, and
+`highRisk` always has at least one. Security, UI, and performance specialists — including project reviewers in
+`.claude/agents/` — run only when the change touches their surface. Critical/Warning verification, deduplication,
+and Critical blocking are unchanged.
 
 `scripts/verification-gate.py` checks a verification record deterministically (`classify`, `check`), and
 `./scripts/test-verification-gate.sh` proves a highRisk record with only focused checks fails, a fast record running

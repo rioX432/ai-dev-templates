@@ -249,7 +249,7 @@
         "review.security"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:2a56b9cd99ba4ef621f7c654cb63035efb8a9b2228e19f2997398b9b567b3cf7"
+      "content_hash": "sha256:2d6abb31ca5fd10877c6e7703cb88df856e3bdc9a86a81469ec007ef4d747d7b"
     },
     {
       "id": "review.security",
@@ -811,7 +811,7 @@
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:44da2f8bff0cc43b0a1dd081bcca89c5d56dd7191912467be6e98e4895723032"
+      "content_hash": "sha256:2456225dc6c2f8f316cb18cdc40da1bbf0c022781259f8d8ff4fc9fbf64e8946"
     },
     {
       "id": "standalone.dev-investigate",

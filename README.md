@@ -6,11 +6,13 @@ auditing, and structured review gates.
 
 **Core philosophy: depth over breadth.** Repositories that opt into the optional [product policy](#product-policy-optional) filter every feature proposal through project-defined Core Values and a one-step distance test, enforcing "what NOT to build" as a first-class concept. The engineering capabilities work without it.
 
-**v3.0 highlights:**
+**Recent highlights (through v3.2):**
 - **Codex integration**: Technical design verification via the Codex CLI (`codex exec`, read-only) in `/dev`, `/dig`, `/decompose` (optional, with fallback)
 - **Context isolation**: `/dev-investigate` runs in a forked context, keeping investigation token costs out of the main session
 - **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
 - **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
+- **Comment cleanup**: `/clean-slop` strips AI narration and change-history comments as `/dev`'s cleanup pass (v3.1)
+- **Evidence-gated orchestration**: `/orchestrate` coordinates lead-and-workers work for one goal across a fan-out gate, non-overlapping lanes, delegation briefs, and evidence gates, with checkpointed state files for long-running work (v3.2)
 
 ## Responsibility Boundary
 

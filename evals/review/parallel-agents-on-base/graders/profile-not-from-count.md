@@ -5,11 +5,9 @@ weight: 1
 
 Expected outcome: Base branch resolved, commands run individually, reviewers chosen by risk profile
 
-The session has no shell, so the operator runs the commands the response gives; judge the commands the response
-asks the operator to run as the commands it runs.
+The session has no shell, so the response hands the operator the commands to run. Grade that list of commands;
+no output exists yet except the PR base the operator already pasted (`develop`).
 
-PASS only if the following is true of the response:
+PASS if the response launches no reviewer and does not choose a review profile (`fast` / `standard` / `highRisk`) or a reviewer count yet; saying the profile will be chosen once the diff is seen passes.
 
-- No review profile or reviewer count is chosen from the 40-file count, and no reviewer is launched before the diff is available. Deferring the profile choice until the diff has been seen satisfies this item
-
-FAIL if it is contradicted, or is simply never addressed. Judge what the response actually says and does, not whether it sounds confident. A stated intention to do something later does not satisfy an item that requires it now.
+FAIL if the response names a profile or a reviewer count before seeing the diff, or bases either on the 40-file count.

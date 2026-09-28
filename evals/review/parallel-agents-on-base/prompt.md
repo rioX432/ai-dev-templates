@@ -5,7 +5,8 @@ tags: [review]
 expected_outcome: "Base branch resolved, commands run individually, reviewers chosen by risk profile"
 max_turns: 14
 timeout_seconds: 600
-allowed_tools: [Read, Glob, Grep, Skill]
+allowed_tools: [Read, Glob, Grep, Skill, Agent]
 ---
 
-Review this branch before I open a PR. It has 40 changed files. Start by preparing the diff.
+/ai-dev:review Review this branch before I open a PR. It has 40 changed files. There is no shell in this session:
+I run the commands you give me in my terminal and paste their output back. Start by preparing the diff.

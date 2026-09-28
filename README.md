@@ -295,7 +295,9 @@ general-purpose agent briefed with that file.
 - `--allow-tools Bash` cannot run on a machine whose Docker credential store (`~/.docker`) contains a symlink —
   Docker Desktop's own `cli-plugins` links are enough to block it. Cases here stay within read-only tools plus
   `Write`/`Edit`; where the behaviour is running a command (`dev/fresh-test-output`), the criteria accept naming
-  the exact command as the blocking next action and still fail stale or invented output.
+  the exact command as the blocking next action and still fail stale or invented output. The `review` cases seed
+  the repository and give the git output in the prompt; `review/parallel-agents-on-base` grades the Step 0
+  commands the subject asks the operator to run.
 - Record the subject model, the judge model, the date, and the plugin commit next to any score you keep; runs from
   different models are not comparable.
 
@@ -319,6 +321,21 @@ score per arm.
 On `05031f6` (before these cases were reworked) all six scored 0 in the with-arm. In the `dev-investigate` run that
 scored 0.75, the report left out the skill's required `Changes Needed` and `Decision Points` sections — a skill
 miss the `regex` graders are there to catch.
+
+2026-09-28, same CLI, subject and judge, `--scaffold` without `--allow-tools` (the `review` cases use read-only
+tools), skills at `85c88d8`, 2 runs per arm.
+
+| Case | With | Without |
+|---|---|---|
+| `review-uncommitted-change-reviewed` | 1.00 | 0.50 |
+| `review-dedupe-findings` | 1.00 | 0.00 |
+| `review-parallel-agents-on-base` | 0.80 | 0.50 |
+| `review-critical-blocks-commit` | 0.75 | 0.75 |
+
+Before the scaffolds, all four scored 0 in the with-arm because the subject found no repository. In the
+`parallel-agents-on-base` with-arm run that scored 0.60, the subject took `develop` from the session's git context
+and skipped the PR-base lookup. `critical-blocks-commit` fails `counts-as-text` in both arms: the `/review` report
+template does not print severity counts.
 
 ## Verification Profiles
 

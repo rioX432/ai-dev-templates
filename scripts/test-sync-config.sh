@@ -36,4 +36,16 @@ if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --confi
   exit 1
 fi
 
+jq '.policy_rules["core-value-filter.md"] = "standalone/orchestration.md"' "$ROOT/skills/sync/sync-config.json" > "$TMP/policy-outside.json"
+if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --config "$TMP/policy-outside.json" >/dev/null 2>&1; then
+  echo "expected a policy rule sourced outside policies/ to fail" >&2
+  exit 1
+fi
+
+jq '.policy_rules["standalone-orchestration.md"] = "policies/core-value-filter.md"' "$ROOT/skills/sync/sync-config.json" > "$TMP/policy-shadow.json"
+if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --config "$TMP/policy-shadow.json" >/dev/null 2>&1; then
+  echo "expected a policy rule shadowing a standalone rule to fail" >&2
+  exit 1
+fi
+
 echo "Sync config tests passed"

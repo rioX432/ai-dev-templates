@@ -26,7 +26,7 @@ STANDALONE_FOLDER = "standalone"
 IGNORED_NAMES = {".DS_Store", "__pycache__"}
 # Each resource type lives in exactly one top-level folder, so a wrapper cannot be
 # re-exported by declaring its SKILL.md as some other resource type.
-TYPE_FOLDERS = {"skill": "skills", "agent": "agents", "rule": "rules", "script": "scripts"}
+TYPE_FOLDERS = {"skill": "skills", "agent": "agents", "rule": "rules", "script": "scripts", "policy": "policies"}
 WORKSPACE_LEVELS = {"none": 0, "read": 1, "write": 2}
 
 
@@ -180,6 +180,15 @@ def validate(root: Path, manifest_path: Path, check_hashes: bool = True) -> dict
             raise ManifestError(f"{cid}: entrypoint {entry['entrypoint']} does not exist")
         if (kind == "standalone") != ("standalone" in entry):
             raise ManifestError(f"{cid}: the standalone block is required for, and only for, kind 'standalone'")
+        if (kind == "policy") != ("policy" in entry):
+            raise ManifestError(f"{cid}: the policy block is required for, and only for, kind 'policy'")
+        policy_resources = [r["type"] == "policy" for r in entry["resources"]]
+        if (kind == "policy" and not all(policy_resources)) or (kind != "policy" and any(policy_resources)):
+            raise ManifestError(f"{cid}: a policy entry holds only policy resources, and only a policy entry holds them")
+        if kind == "policy" and not cid.startswith("policy."):
+            raise ManifestError(f"{cid}: policy entries use the 'policy.' id prefix")
+        if kind != "policy" and cid.startswith("policy."):
+            raise ManifestError(f"{cid}: the 'policy.' prefix is reserved for policy entries")
         if kind == "standalone" and not cid.startswith("standalone."):
             raise ManifestError(f"{cid}: standalone entries use the 'standalone.' id prefix")
         if kind != "standalone" and cid.startswith("standalone."):
@@ -228,7 +237,7 @@ def validate(root: Path, manifest_path: Path, check_hashes: bool = True) -> dict
     for skill_dir in sorted((root / "skills").iterdir()):
         if (skill_dir / "SKILL.md").is_file() and skill_dir.name not in skill_owner:
             raise ManifestError(f"skills/{skill_dir.name} is not classified by any manifest entry")
-    for folder in ("agents", "rules", STANDALONE_FOLDER):
+    for folder in ("agents", "rules", STANDALONE_FOLDER, TYPE_FOLDERS["policy"]):
         for file in sorted((root / folder).glob("*.md")):
             if f"{folder}/{file.name}" not in covered:
                 raise ManifestError(f"{folder}/{file.name} is not classified by any manifest entry")
@@ -250,6 +259,15 @@ def strip_frontmatter(text: str) -> str:
     return text
 
 
+def default_context(manifest: dict[str, Any], policies: list[str]) -> list[dict[str, Any]]:
+    # Optional policies join a resolver's context only when the repository opted into them.
+    available = {entry["id"] for entry in exported(manifest) if entry["kind"] == "policy"}
+    unknown = sorted(set(policies) - available)
+    if unknown:
+        raise ManifestError(f"unknown policies {unknown}")
+    return [entry for entry in exported(manifest) if entry["kind"] != "policy" or entry["id"] in policies]
+
+
 def context(root: Path, entries: list[dict[str, Any]]) -> str:
     chunks = []
     for entry in entries:
@@ -267,6 +285,7 @@ def main() -> int:
     parser.add_argument("capability", nargs="?", help="capability id for resolve")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--policy", action="append", default=[], help="opted-in policy id to include in context")
     args = parser.parse_args()
     root = args.root.resolve()
     manifest_path = args.manifest or root / MANIFEST
@@ -285,7 +304,7 @@ def main() -> int:
         if args.command == "validate":
             print("capability manifest: OK")
         elif args.command == "context":
-            print(context(root, exported(manifest)))
+            print(context(root, default_context(manifest, args.policy)))
         elif args.command == "export":
             print(json.dumps({"provider": manifest["provider"], "capabilities": exported(manifest)}, indent=2))
         else:

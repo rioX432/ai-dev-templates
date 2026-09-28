@@ -35,7 +35,7 @@ the work, not to this rule.
    - **Skip**: existing-pattern implementations, small bug fixes, naming, test strategy (auto-decide from codebase)
    - **Codex unavailable?** Use WebSearch to verify against official docs, document rationale in PR
 5. Implement according to plan
-6. Verify build and lint pass
+6. Verify with the profile the change's risk requires ([rules/verification.md](verification.md))
 7. Run `/ai-dev:review` for self-review
 8. Fix any review findings; extract reusable insights into `docs/claude/review_points.md`
 9. Create PR (`Closes #N` in body)

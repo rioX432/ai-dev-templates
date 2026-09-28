@@ -94,7 +94,8 @@
   "common_rules": [
     "ai-ops.md",
     "behavior.md",
-    "coding-conventions.md"
+    "coding-conventions.md",
+    "verification.md"
   ],
   "standalone_rules": {
     "standalone-orchestration.md": "standalone/orchestration.md"

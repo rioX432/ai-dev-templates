@@ -82,7 +82,7 @@
             "additionalProperties": false,
             "required": ["type", "path"],
             "properties": {
-              "type": {"enum": ["skill", "rule", "agent", "policy", "doc"]},
+              "type": {"enum": ["skill", "rule", "agent", "policy", "doc", "script"]},
               "path": {"type": "string", "pattern": "^[A-Za-z0-9._/-]+$"}
             }
           }

@@ -55,7 +55,7 @@ Create one tracked item per phase. Track progress with the task tools when this 
 4. "Resolve ambiguities (/dig)"
 5. "Decompose into subtasks (/decompose)"
 6. "Implement changes"
-7. "Run quality gate"
+7. "Run verification profile"
 8. "Review changes"
 9. "Commit & create PR"
 
@@ -78,7 +78,7 @@ Phase 4: Task Decomposition (/decompose)
     ↓
 Phase 5: Branch & Implement
     ↓
-Phase 6: Quality Gate (build + test + lint from CLAUDE.md)
+Phase 6: Verification (profile from rules/verification.md)
     ↓
 Phase 7: Review (/review)
     ↓
@@ -260,13 +260,22 @@ Mark task 6 `completed`.
 
 ---
 
-## Phase 6: Quality Gate
+## Phase 6: Verification
 
 Mark task 7 `in_progress`.
 
-Run the project's build, test, and lint commands as defined in CLAUDE.md's Commands section.
+Select and run the verification profile per [rules/verification.md](../../rules/verification.md) (`coding.verify`):
 
-If CLAUDE.md doesn't specify commands, detect from project files:
+1. Classify the change from its semantics and the boundaries it touches — signals such as `docs-only`,
+   `behavior-change`, `crosses-module-boundary`, `auth`, `public-contract` — into `fast`, `standard`, or
+   `highRisk`. Diff size never lowers the profile.
+2. Run the tiers that profile requires (`focused`, `affected-module`, `integration`, `full`) plus the issue's
+   `Done when` commands exactly as written. Delegate a tier to CI only under the rule's delegation contract.
+3. Record the result as the rule's verification record; when `scripts/verification-gate.py` is available, run its
+   `check` on the record and treat a non-zero exit as a failed gate.
+
+Resolve each tier's command from repository guidance (`AGENTS.md`, then `CLAUDE.md` Commands); repository
+requirements override the profile defaults. If it doesn't specify commands, detect from project files:
 - `build.gradle.kts` / `gradlew` → `./gradlew build`, `./gradlew test`, `./gradlew detekt`
 - `package.json` → `npm test`, `npm run lint`
 - `Cargo.toml` → `cargo build`, `cargo test`, `cargo clippy`
@@ -276,7 +285,7 @@ If CLAUDE.md doesn't specify commands, detect from project files:
 ### Failure Handling
 1. Analyze the failure
 2. Fix the issue
-3. Re-run the failing check
+3. Re-run the failing check and the surface the fix invalidated ([rules/verification.md → Re-verification](../../rules/verification.md))
 4. **Maximum 3 fix attempts** — if still failing, report to user and stop
 
 Mark task 7 `completed`.
@@ -321,7 +330,7 @@ After the review completes, write `workspace/{issue}/review.json`:
 
 ### Review Result Handling
 - **Critical**: STOP. Report to user. Do NOT proceed.
-- **Warning**: Fix, re-run the comment cleanup (5c) and the Quality Gate (Phase 6). Mark the finding `"resolved": true` and recompute `counts` and `status` from the findings still unresolved.
+- **Warning**: Fix, re-run the comment cleanup (5c), and re-verify only the surface the fix invalidated per [rules/verification.md → Re-verification](../../rules/verification.md) — not the whole Phase 6 gate. Mark the finding `"resolved": true` and recompute `counts` and `status` from the findings still unresolved.
 - **Suggestion**: Note but don't block
 
 Mark task 8 `completed`.
@@ -332,7 +341,7 @@ Mark task 8 `completed`.
 
 Show the user:
 1. Summary of all changes
-2. Quality gate results
+2. Verification profile, signals, and results per tier
 3. Review findings and resolutions
 4. Proposed commit message (single line, no AI stamps)
 
@@ -400,6 +409,9 @@ On completion, output a structured result for callers (e.g., `/dev-all`):
   "status": "success | failed | blocked",
   "pr_url": "https://github.com/owner/repo/pull/N",
   "verification": {
+    "profile": "fast | standard | highRisk",
+    "signals": ["{signals from rules/verification.md}"],
+    "checks": ["{verification record checks, each bound to head_sha}"],
     "command": "{exact command from CLAUDE.md or the issue}",
     "exit_code": 0,
     "success_signal": "{exact observed signal}",
@@ -439,5 +451,5 @@ Stop and report — never take a default — on:
 | Tests fail (≤3 attempts) | Fix and retry |
 | Tests fail (>3 attempts) | Report to user, stop |
 | Critical review finding | Report to user, stop |
-| Warning review finding | Fix, re-run 5c and the quality gate |
+| Warning review finding | Fix, re-run 5c, re-verify the invalidated surface |
 | Git/PR creation fails | Report error, stop |

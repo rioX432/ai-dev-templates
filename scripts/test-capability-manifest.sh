@@ -47,7 +47,7 @@ done
 fresh_copy() {
   rm -rf "$TMP/src"
   mkdir -p "$TMP/src"
-  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/standalone" "$ROOT/.claude-plugin" "$TMP/src/"
+  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/standalone" "$ROOT/scripts" "$ROOT/.claude-plugin" "$TMP/src/"
 }
 
 expect_failure() {

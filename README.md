@@ -206,7 +206,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 49 cases across 20 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 50 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -248,6 +248,25 @@ claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaf
   different models are not comparable.
 
 Reference: [plugin evals documentation](https://code.claude.com/docs/en/plugin-evals.md).
+
+## Verification Profiles
+
+`rules/verification.md` (`coding.verify`) sizes verification to what a change can break instead of running one fixed
+build + test + lint gate for everything:
+
+| Profile | Chosen when a signal like… | Required tiers |
+|---|---|---|
+| `fast` | `docs-only`, `comments-only`, `test-only`, `refactor-no-behavior-change` | focused (no local full suite) |
+| `standard` | `behavior-change`, `new-feature`, `crosses-module-boundary` | focused + affected-module (+ integration across modules) |
+| `highRisk` | `auth`, `security`, `public-contract`, `data-migration`, `concurrency`, `build-or-ci-config` | focused + affected-module + integration + full |
+
+The highest signal wins and diff size never lowers it. An issue's `Done when` commands always run, and repository
+guidance overrides every default. `standard` may hand `integration`, and `highRisk` may hand `full`, to a required
+CI check that passes on the same head commit. After a review fix, only the surface that fix touched is re-verified.
+
+`scripts/verification-gate.py` checks a verification record deterministically (`classify`, `check`), and
+`./scripts/test-verification-gate.sh` proves a highRisk record with only focused checks fails, a fast record running
+the full suite locally fails, stale or failed evidence satisfies nothing, and the rule's table matches the script.
 
 ## Feature Bloat Prevention
 
@@ -349,7 +368,7 @@ Plugin (language-agnostic)          Project (specific)
     ├─ Phase 4: Task Decomposition (/decompose + Codex validation)
     ├─ ── User confirms approach ──
     ├─ Phase 5: Branch & Implement (/implement-guidance → /clean-slop)
-    ├─ Phase 6: Quality Gate (build/test/lint from CLAUDE.md)
+    ├─ Phase 6: Verification (fast / standard / highRisk profile)
     ├─ Phase 7: Review (/review → review.json artifact)
     ├─ ── User confirms commit ──
     └─ Phase 8: Commit & PR (/pr)
@@ -444,6 +463,8 @@ ai-dev-templates/
 │   ├── test-render-codex-skill.sh
 │   ├── validate-capabilities.py   ← manifest schema, reference, hash, and export validation
 │   ├── test-capability-manifest.sh
+│   ├── verification-gate.py       ← verification profile classification + record check
+│   ├── test-verification-gate.sh
 │   ├── sync-config.py             ← sync schema validation + CI matrix rendering
 │   ├── test-sync-config.sh
 │   ├── save-context.sh
@@ -470,6 +491,7 @@ ai-dev-templates/
 └── rules/
     ├── behavior.md              ← evidence, trust boundaries, independent review
     ├── coding-conventions.md
+    ├── verification.md          ← risk-based verification profiles
     └── ai-ops.md                ← issue-driven engineering flow + Core Value guard
 ```
 

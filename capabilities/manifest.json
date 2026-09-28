@@ -980,7 +980,7 @@
         "reason": "Owns fan-out, model choice, worktrees, budgets, and resume; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:db22ea7692e33f026b05e809d388207bb56a6dac5ed988f4553ff0294830b40b",
+      "content_hash": "sha256:70425aa19132c84f091d7a9407a1898196dc9b15a886fdc97f440fe8af15dec5",
       "composes": [
         "standalone.orchestration-policy"
       ]
@@ -1020,7 +1020,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:f04652dbe8a8a0103c75c631b218cd8a0fc9572a2dce03b72e5ff63f9f3c47d1"
+      "content_hash": "sha256:5d6e5f94a3a306fe4f28564322bbfc3173e997ea2c3678d972bfcd33d6f5afd2"
     },
     {
       "id": "standalone.orchestration-policy",

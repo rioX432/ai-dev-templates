@@ -56,6 +56,44 @@ Common skills/agents/rules are copied to `.claude/skills/`, `.claude/agents/`, `
 
 When this repo is pushed, GitHub Actions automatically creates PRs to sync common files to configured projects. See `.github/workflows/sync-to-projects.yml`.
 
+## Capability Manifest
+
+`capabilities/manifest.json` publishes fine-grained capabilities so a resolver can load one unit of reusable HOW
+instead of the whole plugin. `capabilities/schema.json` defines the entry shape.
+
+| Field | Meaning |
+|---|---|
+| `id` | Stable dotted ID such as `coding.investigate`, `coding.review`, `github.pr`, `ux.audit` |
+| `kind` | `capability` (reusable HOW), `policy` (optional rules a repository opts into), or `standalone` (never exported) |
+| `scope` | The unit it operates on, what it produces, and what it deliberately excludes |
+| `entrypoint`, `resources` | Repository-relative files to load; a `skill` resource is the whole skill directory |
+| `authority` | Workspace access, external side effects, whether it spawns agents, whether it needs a user |
+| `hosts` | `claude` / `codex` support: `native`, `rendered` (Codex skill adapter), `partial`, or `unsupported` |
+| `composes` | Capabilities it may invoke; an exported entry can never compose a `standalone` one, and its `authority` must cover everything the composed entries can do |
+| `contract_version`, `content_hash` | Contract major version and a SHA-256 over every resource file |
+
+A resolver consumes one entry like this:
+
+1. `python3 scripts/validate-capabilities.py resolve coding.review` — prints the entry, after validating the whole
+   manifest and every content hash. `export` prints every exported entry; neither ever returns `standalone` entries.
+2. Check `hosts` for the current runtime and `authority` against what the caller is allowed to do. Side effects
+   listed there (`git.push`, `github.pr.write`, …) are approved by the caller, not by the capability.
+3. Load `entrypoint`, and only the other `resources` the entrypoint links to when the workflow reaches them.
+4. Pin `content_hash`; a different hash is a different contract revision even when `contract_version` is unchanged.
+
+Standalone entries are listed so every skill, agent, and rule is classified, not so they can be loaded:
+`standalone.dev` (E2E composition wrapper), `standalone.dev-investigate` (forked-context adapter),
+`standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.ai-ops` (standalone operating
+policy), and `standalone.sync` (distribution).
+
+`python3 scripts/validate-capabilities.py` exits 0 and prints `capability manifest: OK` when the manifest matches
+its schema, every resource exists, every hash is current, and no standalone wrapper is exported. After editing a
+skill, agent, or rule, run `python3 scripts/validate-capabilities.py update-hashes` and review the hash change with
+the content change. `./scripts/test-capability-manifest.sh` covers the rejection cases.
+
+The manifest is a provider contract. It is unrelated to `.claude/.ai-dev-synced`, which records what a sync copied
+into one target repository so pruning never touches project-owned files.
+
 ## Skills
 
 | Skill | Description |
@@ -296,6 +334,9 @@ ai-dev-templates/
 ├── .github/
 │   └── workflows/
 │       └── sync-to-projects.yml
+├── capabilities/
+│   ├── manifest.json              ← fine-grained capability IDs, authority, hosts, content hashes
+│   └── schema.json
 ├── evals/                         ← claude plugin eval suite, <skill>/<case>/
 ├── skills/
 │   ├── dev/SKILL.md
@@ -354,6 +395,8 @@ ai-dev-templates/
 │   ├── test-hooks.sh              ← deterministic hook safety fixtures
 │   ├── render-codex-skill.py      ← portable Agent Skills frontmatter adapter
 │   ├── test-render-codex-skill.sh
+│   ├── validate-capabilities.py   ← manifest schema, reference, hash, and export validation
+│   ├── test-capability-manifest.sh
 │   ├── sync-config.py             ← sync schema validation + CI matrix rendering
 │   ├── test-sync-config.sh
 │   ├── save-context.sh

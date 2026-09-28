@@ -147,4 +147,8 @@ fresh_copy
 printf '# stray\n' >"$TMP/src/standalone/unlisted.md"
 expect_failure "unclassified standalone policy" "standalone/unlisted.md is not classified"
 
+fresh_copy
+mutate '(.capabilities[] | select(.id == "coding.implement")).authority.spawns_agents = true'
+expect_failure "authority disagrees with allowed-tools" "coding.implement: authority.spawns_agents disagrees"
+
 echo "Capability manifest tests passed"

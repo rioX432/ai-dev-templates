@@ -110,6 +110,17 @@ def resource_files(root: Path, resource: dict[str, str]) -> list[Path]:
     return [path]
 
 
+def declared_tools(skill_file: Path) -> list[str] | None:
+    text = skill_file.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return None
+    header = text[4 : text.find("\n---\n", 4)]
+    match = re.search(r"(?m)^allowed-tools:\s*\n((?:\s+- .+\n?)+)", header)
+    if not match:
+        return None
+    return [line.strip()[2:].strip() for line in match.group(1).splitlines() if line.strip()]
+
+
 def content_hash(root: Path, entry: dict[str, Any]) -> str:
     digest = hashlib.sha256()
     for resource in entry["resources"]:
@@ -183,6 +194,11 @@ def validate(root: Path, manifest_path: Path, check_hashes: bool = True) -> dict
                 skill_owner[skill] = cid
                 if skill in NEVER_EXPORTED_SKILLS and kind != "standalone":
                     raise ManifestError(f"{cid}: skills/{skill} is a standalone wrapper and cannot be exported")
+                tools = declared_tools(root / resource["path"] / "SKILL.md")
+                if tools is not None and ("Agent" in tools) != entry["authority"]["spawns_agents"]:
+                    raise ManifestError(
+                        f"{cid}: authority.spawns_agents disagrees with skills/{skill} allowed-tools (Agent)"
+                    )
 
         for target in entry.get("composes", []):
             if target not in by_id:

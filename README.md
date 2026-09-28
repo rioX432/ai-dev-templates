@@ -217,6 +217,25 @@ claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaf
 
 Reference: [plugin evals documentation](https://code.claude.com/docs/en/plugin-evals.md).
 
+### Recorded runs
+
+2026-09-28, Claude Code 2.1.282, subject `--model sonnet`, judge `--judge-model sonnet` (aliases; the runner does
+not report the resolved model ID), `--scaffold --allow-tools Write Edit`, cases at `ad86186`. Mean score per arm.
+
+| Case | Runs per arm | With | Without |
+|---|---|---|---|
+| `dev-all-goal-from-issue-list` | 2 | 1.00 | 0.20 |
+| `dev-investigate-self-contained-report` | 2 | 1.00 | 0.62 |
+| `dev-goal-from-repo-commands` | 2 | 1.00 | 0.00 |
+| `orchestrate-fan-out-gate-refuses` | 2 | 1.00 | 0.00 |
+| `dev-stop-at-turn-cap` | 3 | 1.00 | 1.00 |
+| `dev-fresh-test-output` | 3 | 0.83 | 0.75 |
+
+On `05031f6` (before these cases were reworked) all six scored 0 in the with-arm. `dev-stop-at-turn-cap` shows no
+delta: once the failing log is in the workspace, the baseline also stops and summarizes. In the `dev-fresh-test-output`
+run that scored 0.50, the response named `./gradlew test` as the required re-run and called the earlier pass stale, and
+the judge still failed both `llm` items — residual judge noise, not a skill failure.
+
 ## Feature Bloat Prevention
 
 AI-driven development can accelerate implementation speed, but without guardrails it leads to scope explosion. This plugin addresses this structurally:

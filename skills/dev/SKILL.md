@@ -272,8 +272,12 @@ Select and run the verification profile per [rules/verification.md](../../rules/
 2. Run the tiers that profile requires (`focused`, `affected-module`, `integration`, `full`) plus the issue's
    `Done when` commands exactly as written. Delegate a tier to CI only under the rule's delegation contract. No PR
    exists yet, so a delegated tier is `pending` here; it is settled in Phase 8c, never assumed.
-3. Record the result as the rule's verification record; when `scripts/verification-gate.py` is available, run its
-   `check` on the record and treat a non-zero exit as a failed gate.
+3. Before each local command, compute its evidence key and consult `workspace/{issue}/evidence.json` per
+   [rules/verification.md → Evidence reuse](../../rules/verification.md) — `verification-gate.py key` and `reuse`
+   when available. Run the command only on `run`; append every passing local run to the store.
+4. Record the result as the rule's verification record, with each check's `evidence_key` and `reuse` decision; when
+   `scripts/verification-gate.py` is available, run its `check` on the record and treat a non-zero exit as a failed
+   gate.
 
 Resolve each tier's command from repository guidance (`AGENTS.md`, then `CLAUDE.md` Commands); repository
 requirements override the profile defaults. If it doesn't specify commands, detect from project files:
@@ -407,7 +411,8 @@ In autonomous mode:
 - **Print `review.json` counts as text** after Phase 7 — the evaluator cannot read files
 - After the final commit and PR creation, re-run the issue's proof command against that exact `HEAD`. Record the
   command, exit code, expected success signal, a short output excerpt containing the signal, and `git rev-parse
-  HEAD` in the structured return. A pre-commit or pre-review test run does not verify the PR head.
+  HEAD` in the structured return. Evidence reuse does not apply to this proof: the `/goal` evaluator reads only
+  output printed after the last change.
 - **If the turn cap is reached, stop on that turn** and print the blocker summary; do not keep working past the cap
 
 ### Structured Return Value
@@ -422,7 +427,7 @@ On completion, output a structured result for callers (e.g., `/dev-all`):
   "verification": {
     "profile": "fast | standard | highRisk",
     "signals": ["{signals from rules/verification.md}"],
-    "checks": ["{verification record checks, each bound to head_sha}"],
+    "checks": ["{verification record checks, each bound to head_sha, with evidence_key and reuse decision}"],
     "command": "{exact command from CLAUDE.md or the issue}",
     "exit_code": 0,
     "success_signal": "{exact observed signal}",

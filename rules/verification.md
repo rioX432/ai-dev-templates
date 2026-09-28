@@ -81,7 +81,33 @@ A fix invalidates only the surface it touched:
 
 The final evidence must still bind every required tier to the final head commit.
 
-## 6. Verification record
+## 6. Evidence reuse
+
+Before running a local check, look for passing evidence of the same check on the same state. Reuse it only when its
+key matches exactly:
+
+| Key field | Taken from | Invalidated by |
+|---|---|---|
+| `head_sha` | `git rev-parse HEAD` | a new commit, unless that commit is exactly the tree the evidence ran on |
+| `tier`, `command` | the check | any difference in the command text |
+| `surface`, `surface_fingerprint` | the paths the command's result depends on, and their content in the working tree | a wider or different surface; any content change under it, committed or not |
+| `config`, `config_fingerprint` | lockfiles and build/test configuration the command reads | any change to those files |
+| `toolchain` | the versions of the runtimes and tools that run it (for example `node --version`) | any version change |
+
+- A surface lists every path the command reads that this change set can alter. Use `.` (the whole repository) for
+  `full`, and whenever you cannot bound it; a `.` surface is invalidated by any change.
+- Within one HEAD, an edit outside a surface leaves that surface's evidence valid, which is what lets a review fix
+  re-run only its own surface (section 5). Committing the verified working tree unchanged keeps the evidence; any
+  other new HEAD invalidates it. Evidence is never carried to a commit with different content.
+- Only passing local evidence is reusable. CI results are always read from CI status (section 4), never from a local
+  store; a failed run is never reused.
+- Keep the store per working copy (for example `workspace/{issue}/evidence.json`), never committed.
+
+`python3 scripts/verification-gate.py key --tier <tier> --command "<cmd>" --surface <paths> --config <files>
+--toolchain "<versions>"` computes the key from the repository, and `python3 scripts/verification-gate.py reuse
+<evidence.json> <key.json>` returns `reuse` or `run` with the reason. Record both in the check.
+
+## 7. Verification record
 
 Report verification as a structured record so a caller can check it without trusting narration:
 
@@ -102,14 +128,15 @@ Report verification as a structured record so a caller can check it without trus
       "success_signal": "{exact observed signal}",
       "output_excerpt": "{bounded excerpt containing the signal}",
       "head_sha": "{commit the check ran against}",
-      "required_by": "{optional: repository | issue, when a check exceeds the profile on purpose}"
+      "required_by": "{optional: repository | issue, when a check exceeds the profile on purpose}",
+      "evidence_key": "{local checks: the key from section 6}",
+      "reuse": {"decision": "ran | reused", "reason": "{reuse reason, or why stored evidence was invalidated}"}
     }
   ]
 }
 ```
 
 When the provider's `scripts/verification-gate.py` is available, `python3 scripts/verification-gate.py check
-<record.json>` applies sections 1–4 deterministically: it rejects a missing required tier, a failed or stale check,
-an unjustified local `full` run under `fast`, a CI check not marked required, and a delegation outside the allowed
-tiers. Without it, apply the same
-rules by hand.
+<record.json>` applies sections 1–4 deterministically and counts executed and reused commands separately: it
+rejects a missing required tier, a failed or stale check, an unjustified local `full` run under `fast`, a CI check
+not marked required, and a delegation outside the allowed tiers. Without it, apply the same rules by hand.

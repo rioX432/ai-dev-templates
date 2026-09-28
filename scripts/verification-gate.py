@@ -4,13 +4,19 @@
 classify: risk signals -> verification profile.
 check:    a verification record -> whether it satisfies its profile.
 table:    the profile table that rules/verification.md must contain verbatim.
+key:      the evidence key for one command on the current repository state.
+reuse:    whether stored evidence satisfies a key, and why or why not.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +49,8 @@ REQUIRED = {
 CONDITIONAL = {"standard": {"crosses-module-boundary": "integration"}}
 DELEGABLE = {"fast": [], "standard": ["integration"], "highRisk": ["full"]}
 REQUIRED_BY = {"repository", "issue"}
+# Key fields that must match exactly; the content fields are compared separately.
+EXACT_KEY_FIELDS = ["tier", "command", "surface", "config", "config_fingerprint", "toolchain"]
 
 
 class RecordError(ValueError):
@@ -112,6 +120,7 @@ def check(record: dict[str, Any]) -> dict[str, Any]:
             missing.append(f"done_when: {command}")
 
     local = [c for c in checks if c.get("source", "local") == "local"]
+    reused = [c for c in local if (c.get("reuse") or {}).get("decision") == "reused"]
     for item in checks:
         if "required_by" in item and item["required_by"] not in REQUIRED_BY:
             raise RecordError(f"required_by must be one of {sorted(REQUIRED_BY)}, got {item['required_by']!r}")
@@ -125,9 +134,81 @@ def check(record: dict[str, Any]) -> dict[str, Any]:
         "required_tiers": required,
         "missing": missing,
         "violations": violations,
-        "local_command_count": len(local),
+        "local_command_count": len(local) - len(reused),
+        "reused_command_count": len(reused),
         "delegated_command_count": len(checks) - len(local),
     }
+
+
+def git(repo: Path, *args: str, env: dict[str, str] | None = None) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args], capture_output=True, text=True, env=env, check=False
+    )
+    if result.returncode != 0:
+        raise RecordError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def working_tree(repo: Path) -> str:
+    # Write the working tree, including untracked non-ignored files, to a tree object through a
+    # throwaway index so the real index and HEAD are untouched.
+    with tempfile.TemporaryDirectory() as scratch:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(scratch) / "index")}
+        git(repo, "read-tree", "HEAD", env=env)
+        git(repo, "add", "-A", env=env)
+        return git(repo, "write-tree", env=env)
+
+
+def fingerprint(repo: Path, tree: str, paths: list[str]) -> str:
+    listing = git(repo, "ls-tree", "-r", "--full-tree", tree, "--", *paths)
+    return "sha256:" + hashlib.sha256(listing.encode()).hexdigest()
+
+
+def evidence_key(repo: Path, tier: str, command: str, surface: list[str], config: list[str], toolchain: list[str]) -> dict[str, Any]:
+    if tier not in TIER_ORDER:
+        raise RecordError(f"unknown tier {tier!r}")
+    if not surface:
+        raise RecordError("a surface is required; use '.' for the whole repository")
+    tree = working_tree(repo)
+    surface = sorted(set(surface))
+    config = sorted(set(config))
+    return {
+        "head_sha": git(repo, "rev-parse", "HEAD"),
+        "tree": tree,
+        "tier": tier,
+        "command": command,
+        "surface": surface,
+        "surface_fingerprint": fingerprint(repo, tree, surface),
+        "config": config,
+        "config_fingerprint": fingerprint(repo, tree, config) if config else None,
+        "toolchain": sorted(toolchain),
+    }
+
+
+def reuse(evidence: list[dict[str, Any]], key: dict[str, Any]) -> dict[str, Any]:
+    candidates = [(i, e) for i, e in enumerate(evidence) if e.get("key", {}).get("command") == key["command"]]
+    if not candidates:
+        return {"decision": "run", "reason": "no stored evidence for this command", "evidence_index": None, "key": key}
+    rejections = []
+    for index, item in reversed(candidates):
+        stored = item["key"]
+        problems = [f"{field} changed" for field in EXACT_KEY_FIELDS if stored.get(field) != key.get(field)]
+        if stored.get("surface_fingerprint") != key["surface_fingerprint"]:
+            problems.append("surface content changed")
+        # Within one HEAD, edits outside the surface leave this command's input unchanged. A new HEAD is
+        # only the same state when it commits exactly the tree the evidence ran on.
+        if stored.get("head_sha") != key["head_sha"] and stored.get("tree") != key["tree"]:
+            problems.append("HEAD changed")
+        if item.get("source", "local") != "local":
+            problems.append("CI evidence is read from CI status, never reused from a local store")
+        elif item.get("exit_code") != 0 or not item.get("success_signal"):
+            problems.append("stored run did not pass")
+        if not problems:
+            same_head = stored.get("head_sha") == key["head_sha"]
+            reason = "same HEAD and surface content" if same_head else "HEAD commits the verified tree unchanged"
+            return {"decision": "reuse", "reason": reason, "evidence_index": index, "key": key}
+        rejections.append(f"evidence[{index}]: " + "; ".join(problems))
+    return {"decision": "run", "reason": " | ".join(rejections), "evidence_index": None, "key": key}
 
 
 def table() -> str:
@@ -152,6 +233,16 @@ def main() -> int:
     check_parser = sub.add_parser("check")
     check_parser.add_argument("record", type=Path)
     sub.add_parser("table")
+    key_parser = sub.add_parser("key")
+    key_parser.add_argument("--repo", type=Path, default=Path("."))
+    key_parser.add_argument("--tier", required=True)
+    key_parser.add_argument("--command", dest="check_command", required=True)
+    key_parser.add_argument("--surface", nargs="+", required=True)
+    key_parser.add_argument("--config", nargs="*", default=[])
+    key_parser.add_argument("--toolchain", nargs="*", default=[])
+    reuse_parser = sub.add_parser("reuse")
+    reuse_parser.add_argument("evidence", type=Path)
+    reuse_parser.add_argument("key", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "classify":
@@ -159,6 +250,14 @@ def main() -> int:
             return 0
         if args.command == "table":
             print(table())
+            return 0
+        if args.command == "key":
+            key = evidence_key(args.repo, args.tier, args.check_command, args.surface, args.config, args.toolchain)
+            print(json.dumps(key, indent=2))
+            return 0
+        if args.command == "reuse":
+            evidence = json.loads(args.evidence.read_text(encoding="utf-8")) if args.evidence.exists() else []
+            print(json.dumps(reuse(evidence, json.loads(args.key.read_text(encoding="utf-8"))), indent=2))
             return 0
         result = check(json.loads(args.record.read_text(encoding="utf-8")))
         print(json.dumps(result, indent=2))

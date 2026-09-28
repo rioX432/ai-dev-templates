@@ -210,7 +210,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 55 cases across 20 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 56 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -282,9 +282,17 @@ or a general reviewer for a concrete signal — and
 `.claude/agents/` — run only when the change touches their surface. Critical/Warning verification, deduplication,
 and Critical blocking are unchanged.
 
-`scripts/verification-gate.py` checks a verification record deterministically (`classify`, `check`), and
-`./scripts/test-verification-gate.sh` proves a highRisk record with only focused checks fails, a fast record running
-the full suite locally fails, stale or failed evidence satisfies nothing, and the rule's table matches the script.
+**Evidence reuse.** A local check is skipped when stored passing evidence has the same key: HEAD, tier, command,
+surface and the content fingerprint of its paths, configuration fingerprint, and toolchain. An edit outside a
+surface keeps that surface's evidence within the same HEAD, so a review fix re-runs only its own surface. Committing
+the verified tree unchanged keeps it; any other new HEAD, a wider surface, or a changed command, configuration, or
+toolchain invalidates it. Failed runs and CI results are never reused, and every check records its `evidence_key`
+and `reuse` decision with the reason.
+
+`scripts/verification-gate.py` checks a verification record deterministically (`classify`, `check`), computes and
+compares evidence keys (`key`, `reuse`), and `./scripts/test-verification-gate.sh` proves a highRisk record with only focused checks fails, a fast record running
+the full suite locally fails, stale or failed evidence satisfies nothing, the rule's table matches the script, and
+evidence reuse hits and invalidates on a real repository.
 
 ## Feature Bloat Prevention
 

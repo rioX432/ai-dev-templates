@@ -111,6 +111,41 @@
       "content_hash": "sha256:a23baa1cdda3203f765661cf634f835e37b63dd9589bf79fbfbb8489be227636"
     },
     {
+      "id": "coding.implement",
+      "kind": "capability",
+      "summary": "Implement one confirmed, bounded change in the working tree with per-subtask verification and a structured report.",
+      "scope": {
+        "unit": "change",
+        "produces": "code-change",
+        "excludes": [
+          "investigation",
+          "design decisions",
+          "review",
+          "commits and pull requests",
+          "spawning agents"
+        ]
+      },
+      "entrypoint": "skills/implement-guidance/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/implement-guidance"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:16e666589ffb41e7a46a75b019edd558ca6b3caacc07062e05daf71892346ebb"
+    },
+    {
       "id": "coding.cleanup",
       "kind": "capability",
       "summary": "Remove AI narration and change-history prose from the current change's comments without touching logic.",
@@ -727,6 +762,7 @@
         "coding.investigate",
         "coding.clarify",
         "coding.decompose",
+        "coding.implement",
         "coding.cleanup",
         "coding.review",
         "github.issue",
@@ -738,7 +774,7 @@
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:0b72a3b0b7fe4462c4ac3fc59d0e081cba174387ef4eaba88136de4cfdadcfdf"
+      "content_hash": "sha256:28bf54b0dfd5e9d43e349ffd8eb04d26b8a18dafcd3aa3d0e42332f27969fe71"
     },
     {
       "id": "standalone.dev-investigate",
@@ -906,7 +942,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:ef82f22fdc34f5257d9fa2de14917cacc4d1e1e65106c07b2505d4c6b6e12678"
+      "content_hash": "sha256:75e3295e53bf42ff81057411dd8fe249cd2c584cf1750de369f122b2aeaf7504"
     },
     {
       "id": "standalone.orchestration-policy",

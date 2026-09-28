@@ -116,6 +116,25 @@ its schema, every resource exists, every hash is current, and no standalone wrap
 skill, agent, or rule, run `python3 scripts/validate-capabilities.py update-hashes` and review the hash change with
 the content change. `./scripts/test-capability-manifest.sh` covers the rejection cases.
 
+### Capabilities and standalone wrappers
+
+A capability does one reusable job and stops: it takes its inputs from the caller, reports a structured result,
+and does not start other steps the caller did not ask for. `/dev` is a standalone composition wrapper that runs
+the capabilities in a fixed order for one person and owns the confirmations between them:
+
+| `/dev` phase | Capability it delegates to |
+|---|---|
+| Investigation | `coding.investigate` (through the forked `dev-investigate` adapter) |
+| Ambiguity resolution | `coding.clarify` |
+| Decomposition | `coding.decompose` |
+| Implementation | `coding.implement` (`skills/implement-guidance`) |
+| Comment cleanup | `coding.cleanup` |
+| Review | `coding.review` |
+| Pull request | `github.pr` |
+
+Buddy resolves the individual capabilities it needs and composes them under its own scheduling, approvals, and
+budgets. It does not invoke `/dev` as a Control Plane; the wrapper exists for backward-compatible direct use.
+
 The manifest is a provider contract. It is unrelated to `.claude/.ai-dev-synced`, which records what a sync copied
 into one target repository so pruning never touches project-owned files.
 
@@ -123,7 +142,8 @@ into one target repository so pruning never touches project-owned files.
 
 | Skill | Description |
 |---|---|
-| `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
+| `/ai-dev:dev {issue}` | Standalone E2E wrapper: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
+| `/ai-dev:implement-guidance [change]` | Implement one confirmed, bounded change with per-subtask Verify; no investigation, review, commit, PR, or agents |
 | `/ai-dev:dev-all [issues]` | Standalone fallback: /dev per admitted issue (explicit IDs, or the `ready` label when empty) in an isolated sub-agent → evidence-based review validation → conditional merge |
 | `/ai-dev:orchestrate [goal]` | Standalone fallback for lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
@@ -186,7 +206,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 48 cases across 19 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 49 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -328,7 +348,7 @@ Plugin (language-agnostic)          Project (specific)
     ├─ Phase 3: Ambiguity Resolution (/dig + Codex design review)
     ├─ Phase 4: Task Decomposition (/decompose + Codex validation)
     ├─ ── User confirms approach ──
-    ├─ Phase 5: Branch & Implement (subtask loop → /clean-slop)
+    ├─ Phase 5: Branch & Implement (/implement-guidance → /clean-slop)
     ├─ Phase 6: Quality Gate (build/test/lint from CLAUDE.md)
     ├─ Phase 7: Review (/review → review.json artifact)
     ├─ ── User confirms commit ──
@@ -367,6 +387,7 @@ ai-dev-templates/
 ├── skills/
 │   ├── dev/SKILL.md
 │   ├── dev-investigate/SKILL.md  ← context: fork, thin wrapper
+│   ├── implement-guidance/SKILL.md ← coding.implement: bounded implementation loop
 │   ├── dev-all/SKILL.md
 │   ├── review/SKILL.md
 │   ├── pr/SKILL.md

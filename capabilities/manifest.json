@@ -1,0 +1,910 @@
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "provider": {
+    "id": "ai-dev",
+    "version": "3.2.0",
+    "repository": "https://github.com/rioX432/ai-dev-templates"
+  },
+  "capabilities": [
+    {
+      "id": "coding.investigate",
+      "kind": "capability",
+      "summary": "Trace data flows, dependencies, and impact for a topic or issue and write an evidence-backed report.",
+      "scope": {
+        "unit": "topic",
+        "produces": "report",
+        "excludes": [
+          "implementation",
+          "solution proposals"
+        ]
+      },
+      "entrypoint": "skills/investigate/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/investigate"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "github.read"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:5bb17052814d6338c85d38b071c76964d9c66ff6d565ef42b108bf043ce68ee4"
+    },
+    {
+      "id": "coding.clarify",
+      "kind": "capability",
+      "summary": "Resolve design ambiguities into a decision matrix, auto-deciding what repository precedent settles.",
+      "scope": {
+        "unit": "change",
+        "produces": "decision-matrix",
+        "excludes": [
+          "implementation",
+          "task decomposition"
+        ]
+      },
+      "entrypoint": "skills/dig/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/dig"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "codex.read-only",
+          "web.read"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:4966995671597a0eeea4eb5a027fa562267d03fc9ef7542f528c6bf0108c862a"
+    },
+    {
+      "id": "coding.decompose",
+      "kind": "capability",
+      "summary": "Turn a confirmed change into ordered, independently verifiable subtasks with a Verify command each.",
+      "scope": {
+        "unit": "change",
+        "produces": "plan",
+        "excludes": [
+          "implementation",
+          "issue filing"
+        ]
+      },
+      "entrypoint": "skills/decompose/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/decompose"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "codex.read-only"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:a23baa1cdda3203f765661cf634f835e37b63dd9589bf79fbfbb8489be227636"
+    },
+    {
+      "id": "coding.cleanup",
+      "kind": "capability",
+      "summary": "Remove AI narration and change-history prose from the current change's comments without touching logic.",
+      "scope": {
+        "unit": "change",
+        "produces": "code-change",
+        "excludes": [
+          "logic refactoring",
+          "repository-wide rewrites"
+        ]
+      },
+      "entrypoint": "skills/clean-slop/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/clean-slop"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:4df127479dbcdfca45cdc7a7cafa05c64d7e33ffccadeb6f1ff792fce3009251"
+    },
+    {
+      "id": "coding.review",
+      "kind": "capability",
+      "summary": "Review the current change against its base and return verified, deduplicated, severity-ranked findings.",
+      "scope": {
+        "unit": "change",
+        "produces": "findings",
+        "excludes": [
+          "fixing findings",
+          "committing",
+          "opening pull requests"
+        ]
+      },
+      "entrypoint": "skills/review/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/review"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "github.read"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "review.security"
+      ],
+      "contract_version": 1,
+      "content_hash": "sha256:ade8522a5b5f2086dc178be349d379a2e47f4d551e9ce311edade7de8ed684bb"
+    },
+    {
+      "id": "review.security",
+      "kind": "capability",
+      "summary": "Read-only OWASP-oriented security review of changed code, used as a specialist reviewer.",
+      "scope": {
+        "unit": "change",
+        "produces": "findings",
+        "excludes": [
+          "non-security review",
+          "fixing findings"
+        ]
+      },
+      "entrypoint": "agents/security-reviewer.md",
+      "resources": [
+        {
+          "type": "agent",
+          "path": "agents/security-reviewer.md"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:b2b1903ca64184a3dd53a385487cd5e28027220f24610ae43cece86b839e616d"
+    },
+    {
+      "id": "coding.test-authoring",
+      "kind": "capability",
+      "summary": "Write tests for changed or new behavior in proportion to its regression risk.",
+      "scope": {
+        "unit": "change",
+        "produces": "code-change",
+        "excludes": [
+          "production code changes"
+        ]
+      },
+      "entrypoint": "agents/test-writer.md",
+      "resources": [
+        {
+          "type": "agent",
+          "path": "agents/test-writer.md"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:3d2bf4db68e10e46bb866762bf40d399c67b427bc39d4a2f610a00480ae02b2e"
+    },
+    {
+      "id": "coding.conventions",
+      "kind": "capability",
+      "summary": "Generic coding, commit, and testing conventions that repository guidance may override.",
+      "scope": {
+        "unit": "repository",
+        "produces": "guidance",
+        "excludes": [
+          "project-specific commands",
+          "architecture"
+        ]
+      },
+      "entrypoint": "rules/coding-conventions.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/coding-conventions.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:f35950a36ab4f528c6d6bf4e06c24a2ade0e68eb70c65c42f20ee1472d7f8c5e"
+    },
+    {
+      "id": "engineering.behavior",
+      "kind": "capability",
+      "summary": "Evidence, trust-boundary, and independent design-check rules for any engineering task.",
+      "scope": {
+        "unit": "repository",
+        "produces": "guidance",
+        "excludes": [
+          "scheduling",
+          "product prioritization"
+        ]
+      },
+      "entrypoint": "rules/behavior.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/behavior.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:be4731893dfd60525fc594c925d0512a58adb6fdc757d967f077161bdbe0b5f7"
+    },
+    {
+      "id": "github.issue",
+      "kind": "capability",
+      "summary": "Size, split, draft, and file GitHub Issues so each one is a single executable unit with one proof.",
+      "scope": {
+        "unit": "issue",
+        "produces": "issue",
+        "excludes": [
+          "implementation",
+          "prioritization"
+        ]
+      },
+      "entrypoint": "skills/issue/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/issue"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "github.read",
+          "github.issue.write"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:9c4b7a288e56fe5cc202fb46a77478767133b1e6419ae091e1020abe5043c0bd"
+    },
+    {
+      "id": "github.pr",
+      "kind": "capability",
+      "summary": "Push the current committed branch and open a pull request from the project template with issue linking.",
+      "scope": {
+        "unit": "change",
+        "produces": "pull-request",
+        "excludes": [
+          "review",
+          "merge"
+        ]
+      },
+      "entrypoint": "skills/pr/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/pr"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "github.read",
+          "git.push",
+          "github.pr.write"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:1d33fae27b8790f3487a14a2c70924b690e3d62939618b5982b23432d5cce8a7"
+    },
+    {
+      "id": "audit.codebase",
+      "kind": "capability",
+      "summary": "Evidence-gated audit of debt, quality, architecture, performance, security, dependencies, and broken UI.",
+      "scope": {
+        "unit": "repository",
+        "produces": "findings",
+        "excludes": [
+          "fixing findings"
+        ]
+      },
+      "entrypoint": "skills/audit/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/audit"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "github.read",
+          "github.issue.write"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "github.issue"
+      ],
+      "contract_version": 1,
+      "content_hash": "sha256:3425b0feb92d36ac8f6a450f28ccc4d260f87e15d0646fa11a9b29770572c502"
+    },
+    {
+      "id": "ux.audit",
+      "kind": "capability",
+      "summary": "Audit a user flow with current-run visual, interaction, code, and accessibility evidence.",
+      "scope": {
+        "unit": "flow",
+        "produces": "findings",
+        "excludes": [
+          "aesthetic preference as defects",
+          "fixing findings"
+        ]
+      },
+      "entrypoint": "skills/ux-audit/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/ux-audit"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "web.read",
+          "browser.interact",
+          "device.interact",
+          "github.read",
+          "github.issue.write"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "github.issue"
+      ],
+      "contract_version": 1,
+      "content_hash": "sha256:1debdb1a3d83451010092ba1a05f439bfada6a7fface029b44af630217133d1c"
+    },
+    {
+      "id": "docs.update",
+      "kind": "capability",
+      "summary": "Audit and update architecture docs, changelog, README cross-references, and missing OSS docs.",
+      "scope": {
+        "unit": "repository",
+        "produces": "docs",
+        "excludes": [
+          "code changes"
+        ]
+      },
+      "entrypoint": "skills/update-docs/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/update-docs"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [],
+        "spawns_agents": true,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:00eec0b6b44b16faa6b4863914069155ddc3b751caddba3d6d6690e51a2406d8"
+    },
+    {
+      "id": "research.think",
+      "kind": "capability",
+      "summary": "Zero-base research on a topic with source verification and counter-arguments before any proposal.",
+      "scope": {
+        "unit": "topic",
+        "produces": "report",
+        "excludes": [
+          "implementation",
+          "issue filing without review"
+        ]
+      },
+      "entrypoint": "skills/think/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/think"
+        },
+        {
+          "type": "agent",
+          "path": "agents/repo-analyzer.md"
+        },
+        {
+          "type": "agent",
+          "path": "agents/deep-researcher.md"
+        },
+        {
+          "type": "agent",
+          "path": "agents/case-analyzer.md"
+        },
+        {
+          "type": "agent",
+          "path": "agents/social-scanner.md"
+        },
+        {
+          "type": "agent",
+          "path": "agents/source-verifier.md"
+        },
+        {
+          "type": "agent",
+          "path": "agents/counter-argument.md"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "web.read",
+          "github.read"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:f35fa05d3e9ccb0e80bb26444667d6f6c1b0426f5bb7a9c9cc4a5cd3b356e0ea"
+    },
+    {
+      "id": "product.competitive-audit",
+      "kind": "capability",
+      "summary": "Core Value-filtered competitive analysis that files at most three issues and records rejected ideas.",
+      "scope": {
+        "unit": "project",
+        "produces": "issue",
+        "excludes": [
+          "feature parity lists",
+          "implementation"
+        ]
+      },
+      "entrypoint": "skills/competitive-audit/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/competitive-audit"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "web.read",
+          "github.read",
+          "github.issue.write"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "github.issue"
+      ],
+      "contract_version": 1,
+      "content_hash": "sha256:c537d3913fc3a27268ae2dbb3222689c9cb9a31edb5693a238cb8b48aa12a531"
+    },
+    {
+      "id": "product.monitor",
+      "kind": "capability",
+      "summary": "Analyze crash rates, store reviews, and metrics of a released mobile app into proposed priorities.",
+      "scope": {
+        "unit": "project",
+        "produces": "findings",
+        "excludes": [
+          "invented KPIs",
+          "implementation"
+        ]
+      },
+      "entrypoint": "skills/monitor/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/monitor"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [
+          "github.read",
+          "github.issue.write"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "github.issue"
+      ],
+      "contract_version": 1,
+      "content_hash": "sha256:1389745230ad61ab29f5298fe88d3ff0baffb708f86b884fb4cb961da8a736f5"
+    },
+    {
+      "id": "project.bootstrap",
+      "kind": "capability",
+      "summary": "Seed a project with repository guidance, review criteria, settings, and optional layer templates.",
+      "scope": {
+        "unit": "project",
+        "produces": "project-files",
+        "excludes": [
+          "overwriting existing project guidance"
+        ]
+      },
+      "entrypoint": "skills/init-project/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/init-project"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "project.write"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:0cf0b57184644005aabd7f587fee6cac96ce35440d28503bb689e0cb114c872c"
+    },
+    {
+      "id": "standalone.dev",
+      "kind": "standalone",
+      "summary": "End-to-end single-issue workflow from investigation through pull request for direct Claude or Codex use.",
+      "scope": {
+        "unit": "issue",
+        "produces": "pull-request",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "skills/dev/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/dev"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "web.read",
+          "codex.read-only",
+          "github.read",
+          "github.issue.write",
+          "git.push",
+          "github.pr.write"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "composes": [
+        "coding.investigate",
+        "coding.clarify",
+        "coding.decompose",
+        "coding.cleanup",
+        "coding.review",
+        "github.issue",
+        "github.pr"
+      ],
+      "standalone": {
+        "role": "composition-wrapper",
+        "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:1441d0433e8961451a73785edf16dbc4db006147f759f144deb4d5b53c9dce5c"
+    },
+    {
+      "id": "standalone.dev-investigate",
+      "kind": "standalone",
+      "summary": "Forked-context adapter that runs coding.investigate for /dev without spending the caller's context.",
+      "scope": {
+        "unit": "issue",
+        "produces": "report",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "skills/dev-investigate/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/dev-investigate"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "github.read"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "composes": [
+        "coding.investigate"
+      ],
+      "standalone": {
+        "role": "host-adapter",
+        "reason": "Context isolation is the caller's scheduling decision; a resolver loads coding.investigate directly."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:ab13d7be137790e1b9a2bd6826cafb6ee448c2763ba3a988c4f5352ba881be25"
+    },
+    {
+      "id": "standalone.dev-all",
+      "kind": "standalone",
+      "summary": "Batch issue loop with admission, ordering, sub-agent runs, CI wait, and conditional merge.",
+      "scope": {
+        "unit": "session",
+        "produces": "orchestration",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "skills/dev-all/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/dev-all"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "web.read",
+          "codex.read-only",
+          "github.read",
+          "github.issue.write",
+          "git.push",
+          "github.pr.write",
+          "github.merge"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "composes": [
+        "standalone.dev"
+      ],
+      "standalone": {
+        "role": "control-plane",
+        "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:7e0d04ffe142a090dc78f6b7bdfcbab8214e92f8538d19cfb2dd17bef19080a9"
+    },
+    {
+      "id": "standalone.orchestrate",
+      "kind": "standalone",
+      "summary": "Lead-and-workers coordination with lanes, evidence gates, and resumable state files for one goal.",
+      "scope": {
+        "unit": "session",
+        "produces": "orchestration",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "skills/orchestrate/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/orchestrate"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "github.read",
+          "github.issue.write",
+          "git.push",
+          "github.pr.write",
+          "github.merge"
+        ],
+        "spawns_agents": true,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "partial"
+      },
+      "standalone": {
+        "role": "control-plane",
+        "reason": "Owns fan-out, model choice, worktrees, budgets, and resume; a Control Plane such as Buddy owns these in controlled execution."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:8b2137854ec5e641b982515d89ea4580807ff5f00562f0cf56cdfb3a1cc66777"
+    },
+    {
+      "id": "standalone.ai-ops",
+      "kind": "standalone",
+      "summary": "Standalone operating rules: issue flow, WIP limit, product filter, /goal conditions, and model selection.",
+      "scope": {
+        "unit": "session",
+        "produces": "guidance",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "rules/ai-ops.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/ai-ops.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "standalone": {
+        "role": "control-plane",
+        "reason": "Mixes queue, WIP, model-routing, and /goal policy with product policy; it is not loaded into resolver context."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:98bd54b52b2eb3d4fb322bc1cb24e133576779f0a72364df2ef7305424403db1"
+    },
+    {
+      "id": "standalone.sync",
+      "kind": "standalone",
+      "summary": "Copy common skills, agents, rules, and layer files into registered projects with prune safety.",
+      "scope": {
+        "unit": "project",
+        "produces": "project-files",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "skills/sync/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/sync"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [
+          "project.write"
+        ],
+        "spawns_agents": false,
+        "user_interaction": "required"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "unsupported"
+      },
+      "standalone": {
+        "role": "distribution",
+        "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:3a0e8387877b8b4ea6966ae280f54cf7d03c025781fa5790e236b1f9780260a8"
+    }
+  ]
+}

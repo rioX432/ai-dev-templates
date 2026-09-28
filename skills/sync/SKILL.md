@@ -37,11 +37,22 @@ preview. Stop on unknown layers, duplicate entries, or missing source files.
 automated sync report it as stale; deletion remains confirmation-gated in Step 4b.
 
 Read `sync-config.json` to get:
-- `projects` — object mapping project name to `{ path, layers, adapters? }` (`layers` is ordered; later layers override earlier ones)
+- `projects` — object mapping project name to `{ path, layers, adapters?, consumption? }` (`layers` is ordered; later layers override earlier ones)
+- `consumption` — `sync` (default, compatibility) copies provider-generic content; `provider` copies only layer
+  content, because a resolver loads the generic capabilities from the capability manifest by reference
 - `default_adapters` — host outputs to render when a project does not override them
 - `common_skills`, `common_agents`, `common_rules` — common files for all projects
+- `standalone_rules` — destination rule name → source under `standalone/`; copied into `.claude/rules/` so
+  standalone `/dev`, `/dev-all`, and `/orchestrate` keep their orchestration policy in synced projects
+- `policy_rules` — destination rule name → source under `policies/`; copied into `.claude/rules/` so synced
+  projects keep the product policy as their compatibility default (a project opts out with `## Product policy: none`)
 - `layer_types` — per-layer definitions for agents, rules, skills, templates
 - `hook_policy` — `manual` means inspect and merge hooks rather than overwriting them
+
+Get each project's exact file list and ownership from the planner rather than re-deriving it:
+`python3 ${TEMPLATE_ROOT}/scripts/sync-config.py plan --project {name} --source-root ${TEMPLATE_ROOT}`. Each `copy`
+entry names its `owner` (`provider-generic` or `layer`); `resolve` lists the capability IDs a `provider` project
+loads instead. Never copy a `provider-generic` file into a `provider` project.
 
 Derive the template root:
 ```
@@ -118,6 +129,9 @@ cp agents/{agent}.md {project}/.claude/agents/{agent}.md
 mkdir -p {project}/.claude/rules/
 cp rules/{rule} {project}/.claude/rules/{rule}
 
+# Standalone and policy rules (destination name → source path from standalone_rules and policy_rules)
+cp {source} {project}/.claude/rules/{destination}
+
 # Hooks (merge, don't overwrite — project may have custom hooks)
 # Show diff and ask user how to merge
 
@@ -159,7 +173,7 @@ MANIFEST={project}/.claude/.ai-dev-synced
 #   agents → rm -f  {project}/.claude/agents/{name}
 #   rules  → rm -f  {project}/.claude/rules/{name}
 # Then rewrite the manifest with what this run copied:
-#   {"skills": [...], "agents": [...], "rules": [...], "adapters": ["claude", "codex"]}
+#   {"skills": [...], "agents": [...], "rules": [...], "adapters": ["claude", "codex"], "consumption": "sync"}
 ```
 
 **Show every prune to the user before deleting** — a removal is not reversible from the target

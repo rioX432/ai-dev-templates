@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Seeds the minimal export-pipeline project each orchestrate case reasons about.
+# Seeds the export-pipeline project mid-run: Lane A's GET /export implements v2 of the contract it owns, the client
+# lane is still on v1, and nothing in the workspace shows a test run. The code matches Lane A's claim, so only
+# missing evidence (not contradicting evidence) keeps the gate shut.
 set -euo pipefail
 
 mkdir -p server/src shared/src app/src
@@ -19,12 +21,58 @@ MD
 cat > server/src/routes.ts <<'TS'
 export const routes = [
   { method: "GET", path: "/health", handler: () => ({ ok: true }) },
+  {
+    method: "GET",
+    path: "/export",
+    handler: () => ({
+      generatedAt: new Date().toISOString(),
+      records: [{ recordId: "r1", name: "First note", updatedAt: "2026-09-20T08:00:00Z" }],
+    }),
+  },
 ];
 TS
 
+mkdir -p server/contracts
+cat > server/contracts/export.md <<'MD'
+# GET /export response
+
+Owner: server lane
+
+## v2 (current)
+
+```json
+{ "generatedAt": "ISO-8601", "records": [{ "recordId": "string", "name": "string", "updatedAt": "ISO-8601" }] }
+```
+
+## v1 (superseded by v2)
+
+```json
+{ "exportedAt": "ISO-8601", "items": [{ "id": "string", "title": "string" }] }
+```
+MD
+
 cat > shared/src/ApiClient.kt <<'KT'
+@Serializable
+data class ExportItem(val id: String, val title: String)
+
+@Serializable
+data class ExportPayload(val exportedAt: String, val items: List<ExportItem>)
+
 class ApiClient(private val baseUrl: String) {
     suspend fun health(): Boolean = TODO("calls GET /health")
+    suspend fun downloadExport(): ExportPayload = TODO("calls GET /export")
+}
+KT
+
+mkdir -p shared/test
+cat > shared/test/ExportPayloadTest.kt <<'KT'
+class ExportPayloadTest {
+    @Test
+    fun decodesExportResponse() {
+        val json = """{"exportedAt":"2026-09-14T10:00:00Z","items":[{"id":"r1","title":"First note"}]}"""
+        val payload = Json.decodeFromString<ExportPayload>(json)
+        assertEquals("r1", payload.items.single().id)
+    }
 }
 KT
 
@@ -51,6 +99,14 @@ import { routes } from "../src/routes";
 
 test("health route is registered", () => {
   assert.ok(routes.some((r) => r.path === "/health"));
+});
+
+test("export route returns generatedAt and records", () => {
+  const route = routes.find((r) => r.path === "/export");
+  assert.ok(route);
+  const body = route.handler() as { generatedAt: string; records: unknown[] };
+  assert.ok(body.generatedAt);
+  assert.ok(Array.isArray(body.records));
 });
 TS
 

@@ -27,11 +27,45 @@ if python3 "$VALIDATE" resolve standalone.dev-all >/dev/null 2>&1; then
   exit 1
 fi
 
+# Buddy-facing context: everything a resolver can load must be free of standalone
+# Control Plane policy. The same markers must match the standalone policy itself, so
+# a passing scan cannot come from markers that match nothing.
+CONTROL_PLANE_MARKERS='/goal\b|\bWIP\b|dev-all|\borchestrate\b|model selection|effort level|worktree|lowest-numbered|consecutive failures|turn cap|maxTurns|\(model:|ready label|standalone/orchestration|standalone-orchestration'
+python3 "$VALIDATE" context >"$TMP/context.md"
+if grep -n -i -E "$CONTROL_PLANE_MARKERS" "$TMP/context.md"; then
+  echo "Buddy-facing capability context contains standalone orchestration policy" >&2
+  exit 1
+fi
+for marker in '/goal' 'WIP limit' 'Model Selection' 'Effort Level' 'worktree' 'consecutive failures' 'turn cap' 'ready label'; do
+  grep -q -F "$marker" "$ROOT/standalone/orchestration.md" || {
+    echo "marker '$marker' no longer appears in the standalone policy; update the scan" >&2
+    exit 1
+  }
+done
+
+# The product policy is optional: exported and resolvable, but absent from the default
+# context, so a generic-only repository never receives a Core Value gate.
+test "$(printf '%s' "$EXPORT" | jq -r '.capabilities[] | select(.id == "policy.core-value-filter") | .policy.optional')" = "true"
+test "$(python3 "$VALIDATE" resolve policy.core-value-filter | jq -r '.kind')" = "policy"
+if grep -n -E 'policies/core-value-filter\.md -->|## Core Value Guard|Won.t Do Registry|2-Axis Evaluation' "$TMP/context.md"; then
+  echo "default capability context contains the optional product policy" >&2
+  exit 1
+fi
+python3 "$VALIDATE" context --policy policy.core-value-filter >"$TMP/policy-context.md"
+grep -q -F '## Core Value Guard' "$TMP/policy-context.md" || {
+  echo "opted-in context is missing the product policy" >&2
+  exit 1
+}
+if python3 "$VALIDATE" context --policy policy.unknown >/dev/null 2>&1; then
+  echo "context accepted an unknown policy" >&2
+  exit 1
+fi
+
 # Each mutation runs against a private copy so hash and coverage checks see real files.
 fresh_copy() {
   rm -rf "$TMP/src"
   mkdir -p "$TMP/src"
-  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/.claude-plugin" "$TMP/src/"
+  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/standalone" "$ROOT/policies" "$ROOT/scripts" "$ROOT/.claude-plugin" "$TMP/src/"
 }
 
 expect_failure() {
@@ -122,5 +156,29 @@ path = Path(sys.argv[1])
 path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
 PY
 test "$(python3 "$VALIDATE" --root "$TMP/src")" = "capability manifest: OK"
+
+fresh_copy
+mutate '(.capabilities[] | select(.id == "engineering.workflow")).resources += [{"type": "doc", "path": "standalone/orchestration.md"}]'
+expect_failure "exported entry loading standalone policy" "is standalone policy and cannot be exported"
+
+fresh_copy
+printf '# stray\n' >"$TMP/src/standalone/unlisted.md"
+expect_failure "unclassified standalone policy" "standalone/unlisted.md is not classified"
+
+fresh_copy
+mutate '(.capabilities[] | select(.id == "coding.implement")).authority.spawns_agents = true'
+expect_failure "authority disagrees with allowed-tools" "coding.implement: authority.spawns_agents disagrees"
+
+fresh_copy
+mutate '(.capabilities[] | select(.id == "policy.core-value-filter")) |= del(.policy)'
+expect_failure "policy without its optional block" "the policy block is required for, and only for, kind 'policy'"
+
+fresh_copy
+mutate '(.capabilities[] | select(.id == "engineering.workflow")).resources += [{"type": "policy", "path": "policies/core-value-filter.md"}]'
+expect_failure "engineering capability embedding the product policy" "only a policy entry holds them"
+
+fresh_copy
+printf '# stray\n' >"$TMP/src/policies/unlisted.md"
+expect_failure "unclassified policy" "policies/unlisted.md is not classified"
 
 echo "Capability manifest tests passed"

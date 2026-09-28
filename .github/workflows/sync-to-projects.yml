@@ -10,6 +10,8 @@ on:
       - 'skills/**'
       - 'agents/*.md'
       - 'rules/*.md'
+      - 'standalone/**'
+      - 'policies/**'
       - 'hooks/**'
       - 'scripts/**'
       - 'layers/**'
@@ -50,13 +52,19 @@ jobs:
           path: target
           token: ${{ secrets.SYNC_PAT }}
 
-      - name: Sync common skills
-        env:
-          SYNC_ADAPTERS: ${{ matrix.adapters }}
+      - name: Start sync record
         run: |
           # Records what this run installs, so the prune step can tell an upstream
           # deletion apart from a skill the project added itself
           : > /tmp/synced-skills; : > /tmp/synced-agents; : > /tmp/synced-rules
+
+      # Provider-generic content: a project in provider consumption resolves it from the
+      # capability manifest, so these steps must not copy it (scripts/sync-config.py plan).
+      - name: Sync common skills
+        if: matrix.consumption == 'sync'
+        env:
+          SYNC_ADAPTERS: ${{ matrix.adapters }}
+        run: |
           # Single source of truth for which skills are common, shared with /sync
           for skill in $(jq -r '.common_skills[]' skills/sync/sync-config.json); do
             if [ ! -f "skills/$skill/SKILL.md" ]; then
@@ -82,6 +90,7 @@ jobs:
           fi
 
       - name: Sync common agents
+        if: matrix.consumption == 'sync'
         run: |
           # Same list /sync uses, so both converge on one manifest and neither
           # prunes what the other installed
@@ -96,6 +105,7 @@ jobs:
           done
 
       - name: Sync common rules
+        if: matrix.consumption == 'sync'
         run: |
           for rule in $(jq -r '.common_rules[]' skills/sync/sync-config.json); do
             if [ ! -f "rules/$rule" ]; then
@@ -106,6 +116,13 @@ jobs:
             cp "rules/$rule" "target/.claude/rules/$rule"
             echo "$rule" >> /tmp/synced-rules
           done
+          # Standalone orchestration policy and the compatibility-default product policy stay
+          # auto-loaded for synced (standalone) use
+          jq -r '(.standalone_rules // {}) + (.policy_rules // {}) | to_entries[] | "\(.key) \(.value)"' skills/sync/sync-config.json |
+            while read -r rule source; do
+              cp "$source" "target/.claude/rules/$rule"
+              echo "$rule" >> /tmp/synced-rules
+            done
 
       - name: Sync layer agents
         run: |
@@ -194,7 +211,8 @@ jobs:
             --argjson agents "$(to_json /tmp/synced-agents)" \
             --argjson rules  "$(to_json /tmp/synced-rules)" \
             --arg adapters "${{ matrix.adapters }}" \
-            '{skills: $skills, agents: $agents, rules: $rules, adapters: ($adapters | split(" "))}' > "$MANIFEST"
+            --arg consumption "${{ matrix.consumption }}" \
+            '{skills: $skills, agents: $agents, rules: $rules, adapters: ($adapters | split(" ")), consumption: $consumption}' > "$MANIFEST"
 
       - name: Configure git
         working-directory: target

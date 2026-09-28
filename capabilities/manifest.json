@@ -111,6 +111,77 @@
       "content_hash": "sha256:a23baa1cdda3203f765661cf634f835e37b63dd9589bf79fbfbb8489be227636"
     },
     {
+      "id": "coding.implement",
+      "kind": "capability",
+      "summary": "Implement one confirmed, bounded change in the working tree with per-subtask verification and a structured report.",
+      "scope": {
+        "unit": "change",
+        "produces": "code-change",
+        "excludes": [
+          "investigation",
+          "design decisions",
+          "review",
+          "commits and pull requests",
+          "spawning agents"
+        ]
+      },
+      "entrypoint": "skills/implement-guidance/SKILL.md",
+      "resources": [
+        {
+          "type": "skill",
+          "path": "skills/implement-guidance"
+        }
+      ],
+      "authority": {
+        "workspace": "write",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "rendered"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:16e666589ffb41e7a46a75b019edd558ca6b3caacc07062e05daf71892346ebb"
+    },
+    {
+      "id": "coding.verify",
+      "kind": "capability",
+      "summary": "Select fast, standard, or highRisk verification from semantic risk and blast radius, and check the evidence record.",
+      "scope": {
+        "unit": "change",
+        "produces": "guidance",
+        "excludes": [
+          "choosing the verification budget",
+          "replacing required CI checks"
+        ]
+      },
+      "entrypoint": "rules/verification.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/verification.md"
+        },
+        {
+          "type": "script",
+          "path": "scripts/verification-gate.py"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:28d92e76af5a7eba87c2dde071ad3b96929f81e29f18cc3331c8b021e01262ae"
+    },
+    {
       "id": "coding.cleanup",
       "kind": "capability",
       "summary": "Remove AI narration and change-history prose from the current change's comments without touching logic.",
@@ -178,7 +249,7 @@
         "review.security"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:ade8522a5b5f2086dc178be349d379a2e47f4d551e9ce311edade7de8ed684bb"
+      "content_hash": "sha256:e4924ea47af03afd36a3eee1ede727fc63430ad08717ee1fe38fca5ff1345937"
     },
     {
       "id": "review.security",
@@ -340,7 +411,7 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:9c4b7a288e56fe5cc202fb46a77478767133b1e6419ae091e1020abe5043c0bd"
+      "content_hash": "sha256:ba89ec31e3736884bbff53d0de7a9eb8fd82e2fe3a1b1159e376ff2d6d052d2f"
     },
     {
       "id": "github.pr",
@@ -580,7 +651,8 @@
         "codex": "rendered"
       },
       "composes": [
-        "github.issue"
+        "github.issue",
+        "policy.core-value-filter"
       ],
       "contract_version": 1,
       "content_hash": "sha256:c537d3913fc3a27268ae2dbb3222689c9cb9a31edb5693a238cb8b48aa12a531"
@@ -618,10 +690,11 @@
         "codex": "rendered"
       },
       "composes": [
-        "github.issue"
+        "github.issue",
+        "policy.core-value-filter"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:1389745230ad61ab29f5298fe88d3ff0baffb708f86b884fb4cb961da8a736f5"
+      "content_hash": "sha256:6e23bd737ed988fc47180b86705c6151ffab7cb28f2a1b365d9f9d3c86ec97e7"
     },
     {
       "id": "project.bootstrap",
@@ -654,7 +727,77 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:0cf0b57184644005aabd7f587fee6cac96ce35440d28503bb689e0cb114c872c"
+      "content_hash": "sha256:4ab8be0e0b6a493d2811d4aa9ebda5111616b95efca6f537318d7d794212466c"
+    },
+    {
+      "id": "engineering.workflow",
+      "kind": "capability",
+      "summary": "Issue-driven engineering flow for one admitted issue: sizing, design check, implementation, verification, review, PR. Needs no product policy.",
+      "scope": {
+        "unit": "issue",
+        "produces": "guidance",
+        "excludes": [
+          "choosing which issue runs next",
+          "concurrency and scheduling"
+        ]
+      },
+      "entrypoint": "rules/ai-ops.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/ai-ops.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:415cd1afa126c40c47ed169c825ba53993ea56fa7ed7a2d15f9f3f6102311c77"
+    },
+    {
+      "id": "policy.core-value-filter",
+      "kind": "policy",
+      "summary": "Optional product policy: Core Value one-step test, Won't Do registry, weekly review of research issues, and 2-axis feature prioritization.",
+      "scope": {
+        "unit": "project",
+        "produces": "guidance",
+        "excludes": [
+          "engineering gates",
+          "bug and security fixes",
+          "choosing which issue runs next"
+        ]
+      },
+      "entrypoint": "policies/core-value-filter.md",
+      "resources": [
+        {
+          "type": "policy",
+          "path": "policies/core-value-filter.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "policy": {
+        "optional": true,
+        "activation": "Repository guidance `## Product policy`: `none`, `core-value-filter`, or a repository path that replaces it.",
+        "compatibility_default": "Without that section it applies when the repository has `## Core Values` or `## Won't Do`, or a synced `.claude/rules/core-value-filter.md`."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:8d1601eb1406fd412edbdf200d540932e3b967e70ccaec689680073ace27f351"
     },
     {
       "id": "standalone.dev",
@@ -695,17 +838,20 @@
         "coding.investigate",
         "coding.clarify",
         "coding.decompose",
+        "coding.implement",
         "coding.cleanup",
+        "coding.verify",
         "coding.review",
         "github.issue",
-        "github.pr"
+        "github.pr",
+        "standalone.orchestration-policy"
       ],
       "standalone": {
         "role": "composition-wrapper",
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:1441d0433e8961451a73785edf16dbc4db006147f759f144deb4d5b53c9dce5c"
+      "content_hash": "sha256:e5f49bb5b556fcf46604295fe4760fe66b3c63fb4db6a1b90a2a511132b6a59f"
     },
     {
       "id": "standalone.dev-investigate",
@@ -784,14 +930,16 @@
         "codex": "partial"
       },
       "composes": [
-        "standalone.dev"
+        "standalone.dev",
+        "standalone.orchestration-policy",
+        "policy.core-value-filter"
       ],
       "standalone": {
         "role": "control-plane",
         "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:7e0d04ffe142a090dc78f6b7bdfcbab8214e92f8538d19cfb2dd17bef19080a9"
+      "content_hash": "sha256:1f5ace3efb01058652ab9cd96b3ef5f36573c67120383f4ebb07b38994ce0feb"
     },
     {
       "id": "standalone.orchestrate",
@@ -832,42 +980,10 @@
         "reason": "Owns fan-out, model choice, worktrees, budgets, and resume; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:8b2137854ec5e641b982515d89ea4580807ff5f00562f0cf56cdfb3a1cc66777"
-    },
-    {
-      "id": "standalone.ai-ops",
-      "kind": "standalone",
-      "summary": "Standalone operating rules: issue flow, WIP limit, product filter, /goal conditions, and model selection.",
-      "scope": {
-        "unit": "session",
-        "produces": "guidance",
-        "excludes": [
-          "resolver-controlled execution"
-        ]
-      },
-      "entrypoint": "rules/ai-ops.md",
-      "resources": [
-        {
-          "type": "rule",
-          "path": "rules/ai-ops.md"
-        }
-      ],
-      "authority": {
-        "workspace": "none",
-        "external": [],
-        "spawns_agents": false,
-        "user_interaction": "none"
-      },
-      "hosts": {
-        "claude": "native",
-        "codex": "native"
-      },
-      "standalone": {
-        "role": "control-plane",
-        "reason": "Mixes queue, WIP, model-routing, and /goal policy with product policy; it is not loaded into resolver context."
-      },
-      "contract_version": 1,
-      "content_hash": "sha256:98bd54b52b2eb3d4fb322bc1cb24e133576779f0a72364df2ef7305424403db1"
+      "content_hash": "sha256:db22ea7692e33f026b05e809d388207bb56a6dac5ed988f4553ff0294830b40b",
+      "composes": [
+        "standalone.orchestration-policy"
+      ]
     },
     {
       "id": "standalone.sync",
@@ -904,7 +1020,42 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:3a0e8387877b8b4ea6966ae280f54cf7d03c025781fa5790e236b1f9780260a8"
+      "content_hash": "sha256:f04652dbe8a8a0103c75c631b218cd8a0fc9572a2dce03b72e5ff63f9f3c47d1"
+    },
+    {
+      "id": "standalone.orchestration-policy",
+      "kind": "standalone",
+      "summary": "Admission, WIP, ordering, retry, effort, model selection, and /goal rules for direct Claude or Codex use.",
+      "scope": {
+        "unit": "session",
+        "produces": "guidance",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "standalone/orchestration.md",
+      "resources": [
+        {
+          "type": "doc",
+          "path": "standalone/orchestration.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "standalone": {
+        "role": "control-plane",
+        "reason": "Control Plane policy; a resolver's own scheduler owns these decisions in controlled execution."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:1fd57bb484a5fe8df07aeb8072b4b3c8ed87d866890c742082e566d00d028f0a"
     }
   ]
 }

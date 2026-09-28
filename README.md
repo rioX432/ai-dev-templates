@@ -4,13 +4,36 @@ Portable AI-development workflows with a Claude Code plugin adapter and rendered
 The repository covers autonomous issue resolution, context-isolated investigation, independent design review, UI/UX
 auditing, and structured review gates.
 
-**Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
+**Core philosophy: depth over breadth.** Repositories that opt into the optional [product policy](#product-policy-optional) filter every feature proposal through project-defined Core Values and a one-step distance test, enforcing "what NOT to build" as a first-class concept. The engineering capabilities work without it.
 
 **v3.0 highlights:**
 - **Codex integration**: Technical design verification via the Codex CLI (`codex exec`, read-only) in `/dev`, `/dig`, `/decompose` (optional, with fallback)
 - **Context isolation**: `/dev-investigate` runs in a forked context, keeping investigation token costs out of the main session
 - **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
 - **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
+
+## Responsibility Boundary
+
+ai-dev-templates is a library of reusable software engineering capabilities, not a scheduler. When a Control Plane
+such as Buddy runs the work, responsibilities split three ways:
+
+| Owner | Owns | Examples |
+|---|---|---|
+| **Control Plane (Buddy)** | WHEN / WHO / HOW MUCH / WHAT CAPABILITY | queue and admission, task graph, agent spawn and concurrency, timeout / retry / resume, worktree scheduling, model and runtime routing, token and cost budget, long-running state, cross-project orchestration, user approval |
+| **ai-dev-templates** | reusable HOW | issue sizing, investigation method, implementation guidance, review criteria, PR conventions, generic coding conventions, audits, project bootstrap, verification guidance, thin standalone wrappers |
+| **Repository** | WHAT IS TRUE HERE | current architecture, build / test / lint commands, project conventions, constraints and gotchas, local exceptions |
+
+**No nested orchestration.** Work assigned by a Control Plane resolves individual capabilities from the
+[Capability Manifest](#capability-manifest) and never starts `/dev`, `/dev-all`, `/orchestrate`, or `/goal` as an
+inner loop. Those remain available for direct Claude Code and Codex use: `/dev-all` and `/orchestrate` are
+standalone fallbacks, and their admission, WIP, ordering, retry, effort, model-selection, and `/goal` rules live in
+[standalone/orchestration.md](standalone/orchestration.md), which is excluded from resolver context.
+
+**Where a new orchestration feature goes.** If it decides when work runs, which work is admitted, who or which
+model runs it, how many run at once, how long or how much it may spend, or how a run resumes, it belongs in the
+Control Plane (Buddy). Only a standalone equivalent needed by direct Claude/Codex users is added here, and only in
+`standalone/` or a `standalone.*` wrapper. If it describes how to do one engineering task well regardless of who
+scheduled it, it belongs here as a capability. If it is a fact about one repository, it belongs in that repository.
 
 ## Assumptions
 
@@ -20,7 +43,7 @@ This plugin is **language-agnostic but not tracker-agnostic**. It assumes:
 |---|---|
 | **GitHub** is the issue tracker and code host, with the `gh` CLI authenticated | `issue`, `pr`, `dev`, `dev-all`, `audit`, `ux-audit`, `competitive-audit`, `monitor` |
 | The project documents build/test/lint commands in `AGENTS.md` or `CLAUDE.md` | every skill that runs a quality gate; repository guidance wins over auto-detection |
-| The project defines **Core Values** in its repository guidance | `competitive-audit` (hard gate), `issue`, `rules/ai-ops.md` |
+| The project defines **Core Values** in its repository guidance — only where the [product policy](#product-policy-optional) applies | `competitive-audit` (hard gate), `issue`, `dev-all` |
 
 `/dev` can *read* a Linear issue (`XXX-1234`) through the Linear MCP, but every write path —
 issue creation, branch, PR, merge — is GitHub. A project on Jira or GitLab can use the
@@ -83,28 +106,83 @@ A resolver consumes one entry like this:
 
 Standalone entries are listed so every skill, agent, and rule is classified, not so they can be loaded:
 `standalone.dev` (E2E composition wrapper), `standalone.dev-investigate` (forked-context adapter),
-`standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.ai-ops` (standalone operating
-policy), and `standalone.sync` (distribution).
+`standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.orchestration-policy`
+(standalone operating policy), and `standalone.sync` (distribution). `python3 scripts/validate-capabilities.py
+context` prints the exact text a resolver loads by default; `./scripts/test-capability-manifest.sh` fails if it
+contains queue, WIP, model-routing, retry, worktree, or `/goal` policy.
+
+Policy entries (`kind: policy`, currently `policy.core-value-filter`) are exported and resolvable but carry
+`policy.optional: true` and are left out of the default context. Add them with `context --policy <id>` only for a
+repository that opted in.
 
 `python3 scripts/validate-capabilities.py` exits 0 and prints `capability manifest: OK` when the manifest matches
 its schema, every resource exists, every hash is current, and no standalone wrapper is exported. After editing a
 skill, agent, or rule, run `python3 scripts/validate-capabilities.py update-hashes` and review the hash change with
 the content change. `./scripts/test-capability-manifest.sh` covers the rejection cases.
 
+### Capabilities and standalone wrappers
+
+A capability does one reusable job and stops: it takes its inputs from the caller, reports a structured result,
+and does not start other steps the caller did not ask for. `/dev` is a standalone composition wrapper that runs
+the capabilities in a fixed order for one person and owns the confirmations between them:
+
+| `/dev` phase | Capability it delegates to |
+|---|---|
+| Investigation | `coding.investigate` (through the forked `dev-investigate` adapter) |
+| Ambiguity resolution | `coding.clarify` |
+| Decomposition | `coding.decompose` |
+| Implementation | `coding.implement` (`skills/implement-guidance`) |
+| Comment cleanup | `coding.cleanup` |
+| Review | `coding.review` |
+| Pull request | `github.pr` |
+
+Buddy resolves the individual capabilities it needs and composes them under its own scheduling, approvals, and
+budgets. It does not invoke `/dev` as a Control Plane; the wrapper exists for backward-compatible direct use.
+
 The manifest is a provider contract. It is unrelated to `.claude/.ai-dev-synced`, which records what a sync copied
 into one target repository so pruning never touches project-owned files.
+
+### Provider consumption and sync
+
+A project consumes this library in one of two modes, set per project as `consumption` in
+`skills/sync/sync-config.json`:
+
+| Content | Owner | `sync` mode (default) | `provider` mode |
+|---|---|---|---|
+| Common skills, agents, rules, standalone and policy rules | provider-generic | copied into `.claude/` (and `.agents/skills`) | not copied; a resolver loads them from the capability manifest by reference |
+| Layer conventions and reviewers (`layers/`) | provider, per project type | copied | copied (no resolver exports them yet) |
+| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never overwritten (`AGENTS.md` is seeded only when missing) | same |
+
+`python3 scripts/sync-config.py plan --project <name>` prints the files a project receives, with their owner, and
+the capability IDs a `provider` project resolves. The workflow and `/sync` copy provider-generic content only in
+`sync` mode, and `./scripts/test-sync-config.sh` proves that applying a `provider` plan leaves no generic file in
+the target and that every workflow step reading a generic list is guarded.
+
+Staged migration for one project:
+
+1. Confirm the consumer (Buddy or another resolver) resolves the IDs from `plan` for that project and pins their
+   `content_hash`. Until it does, keep `sync`: provider discovery is the preferred path only once the resolver is
+   verified.
+2. Set `"consumption": "provider"` for that project. The next sync stops copying generic files; the ones already in
+   the target stay in `.claude/.ai-dev-synced` and are reported as stale, never deleted automatically.
+3. After a run under the resolver passes, prune the stale generic copies with `/sync` (Step 4b shows each removal
+   for confirmation). Standalone use in that repository then comes from the installed plugin.
+
+Rollback: remove `consumption` (or set it to `sync`). The next sync copies the generic files again and rewrites
+`.claude/.ai-dev-synced`; nothing repository-local is touched in either direction.
 
 ## Skills
 
 | Skill | Description |
 |---|---|
-| `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
-| `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue in isolated sub-agent → evidence-based review validation → conditional merge |
-| `/ai-dev:orchestrate [goal]` | Lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
+| `/ai-dev:dev {issue}` | Standalone E2E wrapper: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
+| `/ai-dev:implement-guidance [change]` | Implement one confirmed, bounded change with per-subtask Verify; no investigation, review, commit, PR, or agents |
+| `/ai-dev:dev-all [issues]` | Standalone fallback: /dev per admitted issue (explicit IDs, or the `ready` label when empty) in an isolated sub-agent → evidence-based review validation → conditional merge |
+| `/ai-dev:orchestrate [goal]` | Standalone fallback for lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
 | `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
-| `/ai-dev:review` | Multi-agent parallel code review (Bug/Security + Architecture/Quality) |
+| `/ai-dev:review` | Risk-profiled review: coordinator-only for fast, 0–1 independent reviewer for standard, independent reviewers for highRisk; specialists only on matching surfaces |
 | `/ai-dev:clean-slop [scope]` | Remove AI narration and change-history comments from the current change; comment text only. Runs as `/dev`'s cleanup pass |
 | `/ai-dev:pr` | PR creation using project template with issue linking |
 | `/ai-dev:dig` | Structured ambiguity resolution with auto-decide rules + Codex design review |
@@ -133,7 +211,8 @@ into one target repository so pruning never touches project-owned files.
 | `source-verifier` | haiku | maxTurns: 30 | URL existence + claim consistency check |
 | `counter-argument` | sonnet | maxTurns: 15 | Proposal stress-test: counter-arguments, risks |
 
-Model tiers follow `rules/ai-ops.md → Model Selection for Agents`. Aliases are convenience defaults, not quality
+Model tiers follow `standalone/orchestration.md → Model Selection for Agents` in standalone use; a Control Plane
+routes models itself. Aliases are convenience defaults, not quality
 claims: record the resolved model and date in eval results, and use evals before moving a workflow to a smaller or
 newer model.
 
@@ -160,7 +239,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 47 cases across 19 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 56 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -181,9 +260,14 @@ otherwise starts in an empty throwaway workspace.
 # whole suite, one run per arm
 claude plugin eval . --runs 1 --judge-model sonnet --scaffold --allow-tools Write Edit --no-publish
 
-# one skill
+# one skill; --scaffold is required by cases that seed a fixture repository, and --allow-tools Write Edit by cases
+# whose skill writes or edits files (the runner disables those tools otherwise)
 claude plugin eval . --case 'orchestrate-*' --runs 1 --judge-model sonnet --scaffold --allow-tools Write Edit --no-publish
 ```
+
+`--case` takes one glob; when it is repeated, only the last one applies. Project agents seeded under a scaffold's
+`.claude/agents/` are not registered as agent types in eval runs, so a grader for one also accepts a
+general-purpose agent briefed with that file.
 
 - `--ablation with-without` is the default: each case runs with and without the plugin and the report shows the
   delta. A skill whose score does not move is not paying for its tokens.
@@ -236,13 +320,68 @@ delta: once the failing log is in the workspace, the baseline also stops and sum
 run that scored 0.50, the response named `./gradlew test` as the required re-run and called the earlier pass stale, and
 the judge still failed both `llm` items — residual judge noise, not a skill failure.
 
+## Verification Profiles
+
+`rules/verification.md` (`coding.verify`) sizes verification to what a change can break instead of running one fixed
+build + test + lint gate for everything:
+
+| Profile | Chosen when a signal like… | Required tiers |
+|---|---|---|
+| `fast` | `docs-only`, `comments-only`, `test-only`, `refactor-no-behavior-change` | focused (no local full suite) |
+| `standard` | `behavior-change`, `new-feature`, `crosses-module-boundary` | focused + affected-module (+ integration across modules) |
+| `highRisk` | `auth`, `security`, `public-contract`, `data-migration`, `concurrency`, `build-or-ci-config` | focused + affected-module + integration + full |
+
+The highest signal wins and diff size never lowers it. An issue's `Done when` commands always run, and repository
+guidance overrides every default. `standard` may hand `integration`, and `highRisk` may hand `full`, to a required
+CI check that passes on the same head commit. After a review fix, only the surface that fix touched is re-verified.
+
+`/review` (`coding.review`) uses the same classification for reviewer count: `fast` is reviewed by the coordinator
+alone (0 independent reviewers), `standard` adds at most one — the specialist whose surface the change touches,
+or a general reviewer for a concrete signal — and
+`highRisk` always has at least one. Security, UI, and performance specialists — including project reviewers in
+`.claude/agents/` — run only when the change touches their surface. Critical/Warning verification, deduplication,
+and Critical blocking are unchanged.
+
+**Evidence reuse.** A local check is skipped when stored passing evidence has the same key: HEAD, tier, command,
+surface and the content fingerprint of its paths, configuration fingerprint, and toolchain. An edit outside a
+surface keeps that surface's evidence within the same HEAD, so a review fix re-runs only its own surface. Committing
+the verified tree unchanged keeps it; any other new HEAD, a wider surface, or a changed command, configuration, or
+toolchain invalidates it. Failed runs and CI results are never reused, and every check records its `evidence_key`
+and `reuse` decision with the reason.
+
+`scripts/verification-gate.py` checks a verification record deterministically (`classify`, `check`), computes and
+compares evidence keys (`key`, `reuse`), and `./scripts/test-verification-gate.sh` proves a highRisk record with only focused checks fails, a fast record running
+the full suite locally fails, stale or failed evidence satisfies nothing, the rule's table matches the script, and
+evidence reuse hits and invalidates on a real repository.
+
 ## Feature Bloat Prevention
 
 AI-driven development can accelerate implementation speed, but without guardrails it leads to scope explosion. This plugin addresses this structurally:
 
+### Product Policy (optional)
+
+The Core Value filter, Won't Do registry, weekly review of research issues, and 2-axis feature prioritization live
+in [policies/core-value-filter.md](policies/core-value-filter.md) (`policy.core-value-filter`). They decide which
+features are worth building; they never gate bug or security fixes, investigation, implementation, verification, or
+review. A repository without Core Values uses every engineering capability unblocked.
+
+Which policy applies is resolved in this order, and the first match wins:
+
+| Precedence | Source | Effect |
+|---|---|---|
+| 1 | Repository guidance `## Product policy` (`AGENTS.md` / `CLAUDE.md`) | `none` turns it off; `core-value-filter` turns it on; a repository path replaces it with the repository's own policy |
+| 2 | Compatibility default | With no such section, the policy applies when the repository has `## Core Values` or `## Won't Do`, or a synced `.claude/rules/core-value-filter.md` |
+| 3 | Provider default | Otherwise the repository is generic-only and nothing asks for Core Values |
+
+Repository truth outranks the provider: the repository's Core Values, Won't Do entries, and any replacement policy
+are the content; the provider file only supplies the procedure. `/sync` copies the policy to
+`.claude/rules/core-value-filter.md` (`policy_rules` in `sync-config.json`), so a project synced before this split
+keeps enforcing it without editing anything; it opts out with `## Product policy` set to `none`. A Control Plane
+adds `policy.core-value-filter` to a task's context only for a repository where the policy applies.
+
 ### Core Value Filter
 
-Each project defines **Core Values** (max 3) in its `CLAUDE.md`. Every feature proposal must pass the **one-step distance test**:
+Each project defines **Core Values** (max 3) in its `AGENTS.md` / `CLAUDE.md`. Every feature proposal must pass the **one-step distance test**:
 
 > "Does this DIRECTLY strengthen a Core Value, without intermediate reasoning?"
 
@@ -251,7 +390,7 @@ Each project defines **Core Values** (max 3) in its `CLAUDE.md`. Every feature p
 
 ### Won't Do Registry
 
-Features explicitly decided NOT to build are recorded in `CLAUDE.md → ## Won't Do` with reasoning. This prevents:
+Features explicitly decided NOT to build are recorded under `## Won't Do` in repository guidance with reasoning. This prevents:
 - Future audits from re-proposing the same rejected ideas
 - Research documents from becoming feature requests without review
 
@@ -277,8 +416,8 @@ completion condition.
 ### Structural Constraints
 
 - **competitive-audit**: Max 3 issues per run, Core Value gate at Phase 0, user pain points as primary input (not competitor feature lists)
-- **ai-ops rule**: Research → Issue → Weekly review → Implementation (no shortcut from research to code)
-- **dev-all**: Auto-skips `won't`-labeled issues and Won't Do list entries
+- **ai-ops rule**: Research → Issue → Implementation (no shortcut from research to code); the product policy adds a weekly review
+- **dev-all**: Admits only explicit issue IDs or the ready label; auto-skips `won't`-labeled issues, and Won't Do list entries where the product policy applies
 
 ## Harness Engineering Design
 
@@ -299,7 +438,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
 - **Language-agnostic**: Skills resolve project-specific commands from repository guidance rather than hardcoding one build tool
-- **Depth over breadth**: Core Value filter + Won't Do registry prevent feature factory anti-pattern
+- **Depth over breadth**: the optional Core Value filter + Won't Do registry prevent the feature factory anti-pattern
 
 ### Architecture
 
@@ -335,8 +474,8 @@ Plugin (language-agnostic)          Project (specific)
     ├─ Phase 3: Ambiguity Resolution (/dig + Codex design review)
     ├─ Phase 4: Task Decomposition (/decompose + Codex validation)
     ├─ ── User confirms approach ──
-    ├─ Phase 5: Branch & Implement (subtask loop → /clean-slop)
-    ├─ Phase 6: Quality Gate (build/test/lint from CLAUDE.md)
+    ├─ Phase 5: Branch & Implement (/implement-guidance → /clean-slop)
+    ├─ Phase 6: Verification (fast / standard / highRisk profile)
     ├─ Phase 7: Review (/review → review.json artifact)
     ├─ ── User confirms commit ──
     └─ Phase 8: Commit & PR (/pr)
@@ -345,8 +484,8 @@ Plugin (language-agnostic)          Project (specific)
 ## Workflow: dev-all
 
 ```
-/ai-dev:dev-all #42 #43 #44
-    ├─ Step 1: Resolve issues + dependency analysis
+/ai-dev:dev-all #42 #43 #44        (no arguments: open issues labeled `ready`, never all open issues)
+    ├─ Step 1: Resolve admitted issues + dependency analysis
     ├─ Step 2: Parallel investigation (Explore agents)
     ├─ ── User confirms execution plan ──
     └─ Step 3: Sequential loop
@@ -374,6 +513,7 @@ ai-dev-templates/
 ├── skills/
 │   ├── dev/SKILL.md
 │   ├── dev-investigate/SKILL.md  ← context: fork, thin wrapper
+│   ├── implement-guidance/SKILL.md ← coding.implement: bounded implementation loop
 │   ├── dev-all/SKILL.md
 │   ├── review/SKILL.md
 │   ├── pr/SKILL.md
@@ -430,10 +570,16 @@ ai-dev-templates/
 │   ├── test-render-codex-skill.sh
 │   ├── validate-capabilities.py   ← manifest schema, reference, hash, and export validation
 │   ├── test-capability-manifest.sh
+│   ├── verification-gate.py       ← verification profile classification + record check
+│   ├── test-verification-gate.sh
 │   ├── sync-config.py             ← sync schema validation + CI matrix rendering
 │   ├── test-sync-config.sh
 │   ├── save-context.sh
 │   └── restore-context.sh
+├── standalone/
+│   └── orchestration.md           ← admission, WIP, retry, effort, model selection, /goal (standalone only)
+├── policies/
+│   └── core-value-filter.md       ← optional product policy: Core Values, Won't Do, weekly review, 2-axis
 ├── layers/                        ← composable: projects reference a list of layers
 │   ├── README.md                  ← layer model, drift policy, how to add a layer
 │   ├── kmp/                       ← KMP/CMP mobile (formerly "mobile")
@@ -454,7 +600,8 @@ ai-dev-templates/
 └── rules/
     ├── behavior.md              ← evidence, trust boundaries, independent review
     ├── coding-conventions.md
-    └── ai-ops.md                ← Core Value guard + Codex conditions + WIP limit
+    ├── verification.md          ← risk-based verification profiles
+    └── ai-ops.md                ← issue-driven engineering flow (no product policy required)
 ```
 
 ## License

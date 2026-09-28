@@ -10,7 +10,7 @@
     {
       "name": "ai-dev",
       "source": "./",
-      "description": "E2E issue resolution, Codex-assisted design, multi-agent review, context-isolated investigation \u2014 language-agnostic harness engineering",
+      "description": "E2E issue resolution, Codex-assisted design, risk-scaled review, context-isolated investigation \u2014 language-agnostic harness engineering",
       "version": "3.2.0"
     }
   ]

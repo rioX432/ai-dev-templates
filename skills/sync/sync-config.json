@@ -95,6 +95,9 @@
     "behavior.md",
     "coding-conventions.md"
   ],
+  "standalone_rules": {
+    "standalone-orchestration.md": "standalone/orchestration.md"
+  },
   "layer_types": {
     "kmp": {
       "agents": [

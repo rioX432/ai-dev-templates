@@ -22,6 +22,7 @@ PLUGIN = Path(".claude-plugin/plugin.json")
 # Skills whose loop is a Control Plane or a fixed E2E composition. A resolver that
 # loaded them would run a nested orchestrator, so they can never be exported.
 NEVER_EXPORTED_SKILLS = {"dev", "dev-all", "orchestrate"}
+STANDALONE_FOLDER = "standalone"
 IGNORED_NAMES = {".DS_Store", "__pycache__"}
 # Each resource type lives in exactly one top-level folder, so a wrapper cannot be
 # re-exported by declaring its SKILL.md as some other resource type.
@@ -159,6 +160,8 @@ def validate(root: Path, manifest_path: Path, check_hashes: bool = True) -> dict
                     raise ManifestError(f"{cid}: {resource['path']} must be a '{rtype}' resource only under {folder}/")
             if resource["type"] == "skill" and len(parts) != 2:
                 raise ManifestError(f"{cid}: skill resource {resource['path']} must be a skills/<name> directory")
+            if parts[0] == STANDALONE_FOLDER and kind != "standalone":
+                raise ManifestError(f"{cid}: {resource['path']} is standalone policy and cannot be exported")
         paths = [r["path"] for r in entry["resources"]]
         if not any(entry["entrypoint"] == p or entry["entrypoint"].startswith(p + "/") for p in paths):
             raise ManifestError(f"{cid}: entrypoint {entry['entrypoint']} is not inside its resources")
@@ -209,7 +212,7 @@ def validate(root: Path, manifest_path: Path, check_hashes: bool = True) -> dict
     for skill_dir in sorted((root / "skills").iterdir()):
         if (skill_dir / "SKILL.md").is_file() and skill_dir.name not in skill_owner:
             raise ManifestError(f"skills/{skill_dir.name} is not classified by any manifest entry")
-    for folder in ("agents", "rules"):
+    for folder in ("agents", "rules", STANDALONE_FOLDER):
         for file in sorted((root / folder).glob("*.md")):
             if f"{folder}/{file.name}" not in covered:
                 raise ManifestError(f"{folder}/{file.name} is not classified by any manifest entry")
@@ -221,9 +224,30 @@ def exported(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     return [entry for entry in manifest["capabilities"] if entry["kind"] != "standalone"]
 
 
+def strip_frontmatter(text: str) -> str:
+    # Host frontmatter (allowed tools, agent model defaults) is adapter metadata that a
+    # resolver overrides; the body is the context a capability contributes.
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end >= 0:
+            return text[end + 5 :]
+    return text
+
+
+def context(root: Path, entries: list[dict[str, Any]]) -> str:
+    chunks = []
+    for entry in entries:
+        for resource in entry["resources"]:
+            for file in resource_files(root, resource):
+                if file.suffix == ".md":
+                    relative = file.relative_to(root).as_posix()
+                    chunks.append(f"<!-- {entry['id']}: {relative} -->\n{strip_frontmatter(file.read_text(encoding='utf-8'))}")
+    return "\n".join(chunks)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", nargs="?", default="validate", choices=("validate", "update-hashes", "export", "resolve"))
+    parser.add_argument("command", nargs="?", default="validate", choices=("validate", "update-hashes", "export", "resolve", "context"))
     parser.add_argument("capability", nargs="?", help="capability id for resolve")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--manifest", type=Path)
@@ -244,6 +268,8 @@ def main() -> int:
         manifest = validate(root, manifest_path)
         if args.command == "validate":
             print("capability manifest: OK")
+        elif args.command == "context":
+            print(context(root, exported(manifest)))
         elif args.command == "export":
             print(json.dumps({"provider": manifest["provider"], "capabilities": exported(manifest)}, indent=2))
         else:

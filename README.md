@@ -12,6 +12,29 @@ auditing, and structured review gates.
 - **Structured review gating**: `/dev-all` validates `review.json` artifacts before auto-merge (Critical → skip, Warning → user confirmation)
 - **Lifecycle hooks**: SubagentStart/Stop, TaskCompleted, SessionEnd logging for observability
 
+## Responsibility Boundary
+
+ai-dev-templates is a library of reusable software engineering capabilities, not a scheduler. When a Control Plane
+such as Buddy runs the work, responsibilities split three ways:
+
+| Owner | Owns | Examples |
+|---|---|---|
+| **Control Plane (Buddy)** | WHEN / WHO / HOW MUCH / WHAT CAPABILITY | queue and admission, task graph, agent spawn and concurrency, timeout / retry / resume, worktree scheduling, model and runtime routing, token and cost budget, long-running state, cross-project orchestration, user approval |
+| **ai-dev-templates** | reusable HOW | issue sizing, investigation method, implementation guidance, review criteria, PR conventions, generic coding conventions, audits, project bootstrap, verification guidance, thin standalone wrappers |
+| **Repository** | WHAT IS TRUE HERE | current architecture, build / test / lint commands, project conventions, constraints and gotchas, local exceptions |
+
+**No nested orchestration.** Work assigned by a Control Plane resolves individual capabilities from the
+[Capability Manifest](#capability-manifest) and never starts `/dev`, `/dev-all`, `/orchestrate`, or `/goal` as an
+inner loop. Those remain available for direct Claude Code and Codex use: `/dev-all` and `/orchestrate` are
+standalone fallbacks, and their admission, WIP, ordering, retry, effort, model-selection, and `/goal` rules live in
+[standalone/orchestration.md](standalone/orchestration.md), which is excluded from resolver context.
+
+**Where a new orchestration feature goes.** If it decides when work runs, which work is admitted, who or which
+model runs it, how many run at once, how long or how much it may spend, or how a run resumes, it belongs in the
+Control Plane (Buddy). Only a standalone equivalent needed by direct Claude/Codex users is added here, and only in
+`standalone/` or a `standalone.*` wrapper. If it describes how to do one engineering task well regardless of who
+scheduled it, it belongs here as a capability. If it is a fact about one repository, it belongs in that repository.
+
 ## Assumptions
 
 This plugin is **language-agnostic but not tracker-agnostic**. It assumes:
@@ -83,8 +106,10 @@ A resolver consumes one entry like this:
 
 Standalone entries are listed so every skill, agent, and rule is classified, not so they can be loaded:
 `standalone.dev` (E2E composition wrapper), `standalone.dev-investigate` (forked-context adapter),
-`standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.ai-ops` (standalone operating
-policy), and `standalone.sync` (distribution).
+`standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.orchestration-policy`
+(standalone operating policy), and `standalone.sync` (distribution). `python3 scripts/validate-capabilities.py
+context` prints the exact text a resolver can load; `./scripts/test-capability-manifest.sh` fails if it contains
+queue, WIP, model-routing, retry, worktree, or `/goal` policy.
 
 `python3 scripts/validate-capabilities.py` exits 0 and prints `capability manifest: OK` when the manifest matches
 its schema, every resource exists, every hash is current, and no standalone wrapper is exported. After editing a
@@ -99,8 +124,8 @@ into one target repository so pruning never touches project-owned files.
 | Skill | Description |
 |---|---|
 | `/ai-dev:dev {issue}` | E2E: investigate (forked) → Codex design → dig → decompose → implement → test → review → PR |
-| `/ai-dev:dev-all [issues]` | Autonomous issue processing: /dev per issue in isolated sub-agent → evidence-based review validation → conditional merge |
-| `/ai-dev:orchestrate [goal]` | Lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
+| `/ai-dev:dev-all [issues]` | Standalone fallback: /dev per admitted issue (explicit IDs, or the `ready` label when empty) in an isolated sub-agent → evidence-based review validation → conditional merge |
+| `/ai-dev:orchestrate [goal]` | Standalone fallback for lead-and-workers coordination for one goal that outgrows a single run: fan-out gate → non-overlapping lanes → delegation briefs → evidence gates → independent evaluation → checkpointed state files. Also the home for long-running PoCs that span sessions |
 | `/ai-dev:dev-investigate` | Context-isolated codebase investigation (runs with `context: fork`) |
 | `/ai-dev:investigate <topic>` | Standalone codebase investigation: data flows, dependencies, impact — report only |
 | `/ai-dev:issue [input]` | Right-sized issue authoring: sizing gate → split → template → file. Every issue-creating skill routes through it |
@@ -133,7 +158,8 @@ into one target repository so pruning never touches project-owned files.
 | `source-verifier` | haiku | maxTurns: 30 | URL existence + claim consistency check |
 | `counter-argument` | sonnet | maxTurns: 15 | Proposal stress-test: counter-arguments, risks |
 
-Model tiers follow `rules/ai-ops.md → Model Selection for Agents`. Aliases are convenience defaults, not quality
+Model tiers follow `standalone/orchestration.md → Model Selection for Agents` in standalone use; a Control Plane
+routes models itself. Aliases are convenience defaults, not quality
 claims: record the resolved model and date in eval results, and use evals before moving a workflow to a smaller or
 newer model.
 
@@ -160,7 +186,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 47 cases across 19 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 48 cases across 19 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -245,7 +271,7 @@ completion condition.
 
 - **competitive-audit**: Max 3 issues per run, Core Value gate at Phase 0, user pain points as primary input (not competitor feature lists)
 - **ai-ops rule**: Research → Issue → Weekly review → Implementation (no shortcut from research to code)
-- **dev-all**: Auto-skips `won't`-labeled issues and Won't Do list entries
+- **dev-all**: Admits only explicit issue IDs or the ready label; auto-skips `won't`-labeled issues and Won't Do list entries
 
 ## Harness Engineering Design
 
@@ -312,8 +338,8 @@ Plugin (language-agnostic)          Project (specific)
 ## Workflow: dev-all
 
 ```
-/ai-dev:dev-all #42 #43 #44
-    ├─ Step 1: Resolve issues + dependency analysis
+/ai-dev:dev-all #42 #43 #44        (no arguments: open issues labeled `ready`, never all open issues)
+    ├─ Step 1: Resolve admitted issues + dependency analysis
     ├─ Step 2: Parallel investigation (Explore agents)
     ├─ ── User confirms execution plan ──
     └─ Step 3: Sequential loop
@@ -401,6 +427,8 @@ ai-dev-templates/
 │   ├── test-sync-config.sh
 │   ├── save-context.sh
 │   └── restore-context.sh
+├── standalone/
+│   └── orchestration.md           ← admission, WIP, retry, effort, model selection, /goal (standalone only)
 ├── layers/                        ← composable: projects reference a list of layers
 │   ├── README.md                  ← layer model, drift policy, how to add a layer
 │   ├── kmp/                       ← KMP/CMP mobile (formerly "mobile")
@@ -421,7 +449,7 @@ ai-dev-templates/
 └── rules/
     ├── behavior.md              ← evidence, trust boundaries, independent review
     ├── coding-conventions.md
-    └── ai-ops.md                ← Core Value guard + Codex conditions + WIP limit
+    └── ai-ops.md                ← issue-driven engineering flow + Core Value guard
 ```
 
 ## License

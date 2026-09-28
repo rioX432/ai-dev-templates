@@ -24,4 +24,16 @@ if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --confi
   exit 1
 fi
 
+jq '.standalone_rules["standalone-orchestration.md"] = "rules/ai-ops.md"' "$ROOT/skills/sync/sync-config.json" > "$TMP/outside.json"
+if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --config "$TMP/outside.json" >/dev/null 2>&1; then
+  echo "expected a standalone rule sourced outside standalone/ to fail" >&2
+  exit 1
+fi
+
+jq '.standalone_rules["ai-ops.md"] = "standalone/orchestration.md"' "$ROOT/skills/sync/sync-config.json" > "$TMP/shadow.json"
+if python3 "$ROOT/scripts/sync-config.py" validate --source-root "$ROOT" --config "$TMP/shadow.json" >/dev/null 2>&1; then
+  echo "expected a standalone rule shadowing a common rule to fail" >&2
+  exit 1
+fi
+
 echo "Sync config tests passed"

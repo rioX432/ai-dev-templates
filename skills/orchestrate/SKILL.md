@@ -170,10 +170,14 @@ Also set per lane:
 
 A worker's own verdict is not evidence. Judge the artifact.
 
-- **Require printed output.** A claim that tests pass, with no command and no output, is unverified. `review.json`
-  contents, a test summary line, a diff stat, a URL — those are evidence.
+- **Require printed output.** A claim that tests pass, with no command and no output, is `needs-evidence`: ask the
+  worker for the command and its output, or run it yourself, and keep that verdict until one of them is shown — even
+  when the code reads right or the real problem turns out to be elsewhere. `review.json` contents, a test summary
+  line, a diff stat, a URL — those are evidence. Source is not: an implementation or a test file that matches the
+  contract shows what a run would check, not that it passed.
 - **Spot-check load-bearing claims** against the code or the primary source yourself. Workers report success too
-  generously.
+  generously. A spot-check can move a claim to `fail` or `disputed`, never to `pass`, so reading the code never
+  replaces the printed output above.
 - Use four verdicts: **pass** (threshold verified), **fail** (contradicted by evidence), **needs-evidence** (the
   claim may hold but nothing shows it), **disputed** (two sources conflict). Only `pass` opens a gate.
 - Settle a dispute with deterministic evidence first — a test, a command, the file itself — and only then with one

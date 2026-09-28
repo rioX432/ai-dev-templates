@@ -323,19 +323,20 @@ scored 0.75, the report left out the skill's required `Changes Needed` and `Deci
 miss the `regex` graders are there to catch.
 
 2026-09-28, same CLI, subject and judge, `--scaffold` without `--allow-tools` (the `review` cases use read-only
-tools), skills at `85c88d8`, 2 runs per arm.
+tools), plugin at the commit that added the `Counts` line to `/review`, 2 runs per arm.
 
 | Case | With | Without |
 |---|---|---|
-| `review-uncommitted-change-reviewed` | 1.00 | 0.50 |
+| `review-uncommitted-change-reviewed` | 1.00 | 0.00 |
 | `review-dedupe-findings` | 1.00 | 0.00 |
-| `review-parallel-agents-on-base` | 0.80 | 0.50 |
-| `review-critical-blocks-commit` | 0.75 | 0.75 |
+| `review-critical-blocks-commit` | 1.00 | 0.62 |
+| `review-parallel-agents-on-base` | 0.60 | 0.50 |
 
-Before the scaffolds, all four scored 0 in the with-arm because the subject found no repository. In the
-`parallel-agents-on-base` with-arm run that scored 0.60, the subject took `develop` from the session's git context
-and skipped the PR-base lookup. `critical-blocks-commit` fails `counts-as-text` in both arms: the `/review` report
-template does not print severity counts.
+Before the scaffolds, all four scored 0 in the with-arm because the subject found no repository. Before the
+`Counts` line, `critical-blocks-commit` failed `counts-as-text` in both arms (0.75 / 0.75). The session's git
+context reports `develop` as the main branch, so the `parallel-agents-on-base` subject writes `develop` into the
+diff commands before its PR-base lookup returns; the judge split on that across runs (0.80 with-arm on an earlier
+run), and one with-arm run here chained its lookup with `||` and left out `git diff HEAD`.
 
 ## Verification Profiles
 

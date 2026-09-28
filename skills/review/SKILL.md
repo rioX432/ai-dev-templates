@@ -129,6 +129,7 @@ as an independent reviewer for the `highRisk` minimum.
 **Review profile:** fast / standard / highRisk — signals: {signals}
 **Reviewed by:** {coordinator | Agent A (Bug/Security) | Agent B (Arch/Quality) | specialists}
 **Independent reviewers:** {N} — {why each was needed, or "none: fast profile"}
+**Counts:** Critical {n} · Warning {n} · Suggestion {n} · Nit {n}
 
 ### Critical (must fix)
 - [file:line] description

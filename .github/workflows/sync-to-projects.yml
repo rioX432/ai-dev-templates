@@ -10,6 +10,7 @@ on:
       - 'skills/**'
       - 'agents/*.md'
       - 'rules/*.md'
+      - 'standalone/**'
       - 'hooks/**'
       - 'scripts/**'
       - 'layers/**'
@@ -106,6 +107,12 @@ jobs:
             cp "rules/$rule" "target/.claude/rules/$rule"
             echo "$rule" >> /tmp/synced-rules
           done
+          # Standalone orchestration policy stays auto-loaded for synced (standalone) use
+          jq -r '.standalone_rules // {} | to_entries[] | "\(.key) \(.value)"' skills/sync/sync-config.json |
+            while read -r rule source; do
+              cp "$source" "target/.claude/rules/$rule"
+              echo "$rule" >> /tmp/synced-rules
+            done
 
       - name: Sync layer agents
         run: |

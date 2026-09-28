@@ -49,6 +49,15 @@ def load_and_validate(config_path: Path, source_root: Path) -> dict[str, Any]:
         require_file(source_root / "agents" / f"{agent}.md", f"common_agents.{agent}")
     for rule in string_list(config.get("common_rules"), "common_rules"):
         require_file(source_root / "rules" / rule, f"common_rules.{rule}")
+    standalone_rules = config.get("standalone_rules", {})
+    if not isinstance(standalone_rules, dict):
+        raise ConfigError("standalone_rules must map a destination rule name to a source path")
+    for destination, source in standalone_rules.items():
+        if not isinstance(source, str) or not source.startswith("standalone/"):
+            raise ConfigError(f"standalone_rules.{destination} must name a file under standalone/")
+        if destination in config["common_rules"] or "/" in destination or not destination.endswith(".md"):
+            raise ConfigError(f"standalone_rules.{destination} must be a distinct .md rule file name")
+        require_file(source_root / source, f"standalone_rules.{destination}")
 
     for layer_name, layer in layers.items():
         if not isinstance(layer, dict):

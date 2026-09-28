@@ -178,7 +178,7 @@
         "review.security"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:ade8522a5b5f2086dc178be349d379a2e47f4d551e9ce311edade7de8ed684bb"
+      "content_hash": "sha256:2a56b9cd99ba4ef621f7c654cb63035efb8a9b2228e19f2997398b9b567b3cf7"
     },
     {
       "id": "review.security",
@@ -340,7 +340,7 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:9c4b7a288e56fe5cc202fb46a77478767133b1e6419ae091e1020abe5043c0bd"
+      "content_hash": "sha256:390acccf42b0988309e9b21fc8ccb05552c94aa1d8e603111acb14b3c23f16a5"
     },
     {
       "id": "github.pr",
@@ -654,7 +654,39 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:0cf0b57184644005aabd7f587fee6cac96ce35440d28503bb689e0cb114c872c"
+      "content_hash": "sha256:6ce450d256ac9ea3aef1b529766bc58e00902ff1fd82f15128e6750e82342492"
+    },
+    {
+      "id": "engineering.workflow",
+      "kind": "capability",
+      "summary": "Issue-driven engineering flow for one admitted issue: sizing, design check, implementation, verification, review, PR.",
+      "scope": {
+        "unit": "issue",
+        "produces": "guidance",
+        "excludes": [
+          "choosing which issue runs next",
+          "concurrency and scheduling"
+        ]
+      },
+      "entrypoint": "rules/ai-ops.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/ai-ops.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:fdeea743454ecb75040f05bb05c20127cd5d82dd500283ec16f114c9a6b77f21"
     },
     {
       "id": "standalone.dev",
@@ -698,14 +730,15 @@
         "coding.cleanup",
         "coding.review",
         "github.issue",
-        "github.pr"
+        "github.pr",
+        "standalone.orchestration-policy"
       ],
       "standalone": {
         "role": "composition-wrapper",
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:1441d0433e8961451a73785edf16dbc4db006147f759f144deb4d5b53c9dce5c"
+      "content_hash": "sha256:0b72a3b0b7fe4462c4ac3fc59d0e081cba174387ef4eaba88136de4cfdadcfdf"
     },
     {
       "id": "standalone.dev-investigate",
@@ -784,14 +817,15 @@
         "codex": "partial"
       },
       "composes": [
-        "standalone.dev"
+        "standalone.dev",
+        "standalone.orchestration-policy"
       ],
       "standalone": {
         "role": "control-plane",
         "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:7e0d04ffe142a090dc78f6b7bdfcbab8214e92f8538d19cfb2dd17bef19080a9"
+      "content_hash": "sha256:fab33cb9786afff2977f980ec054fb3c9148a20bf36100eca57cca6228bab9ea"
     },
     {
       "id": "standalone.orchestrate",
@@ -832,42 +866,10 @@
         "reason": "Owns fan-out, model choice, worktrees, budgets, and resume; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:8b2137854ec5e641b982515d89ea4580807ff5f00562f0cf56cdfb3a1cc66777"
-    },
-    {
-      "id": "standalone.ai-ops",
-      "kind": "standalone",
-      "summary": "Standalone operating rules: issue flow, WIP limit, product filter, /goal conditions, and model selection.",
-      "scope": {
-        "unit": "session",
-        "produces": "guidance",
-        "excludes": [
-          "resolver-controlled execution"
-        ]
-      },
-      "entrypoint": "rules/ai-ops.md",
-      "resources": [
-        {
-          "type": "rule",
-          "path": "rules/ai-ops.md"
-        }
-      ],
-      "authority": {
-        "workspace": "none",
-        "external": [],
-        "spawns_agents": false,
-        "user_interaction": "none"
-      },
-      "hosts": {
-        "claude": "native",
-        "codex": "native"
-      },
-      "standalone": {
-        "role": "control-plane",
-        "reason": "Mixes queue, WIP, model-routing, and /goal policy with product policy; it is not loaded into resolver context."
-      },
-      "contract_version": 1,
-      "content_hash": "sha256:98bd54b52b2eb3d4fb322bc1cb24e133576779f0a72364df2ef7305424403db1"
+      "content_hash": "sha256:db22ea7692e33f026b05e809d388207bb56a6dac5ed988f4553ff0294830b40b",
+      "composes": [
+        "standalone.orchestration-policy"
+      ]
     },
     {
       "id": "standalone.sync",
@@ -904,7 +906,42 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:3a0e8387877b8b4ea6966ae280f54cf7d03c025781fa5790e236b1f9780260a8"
+      "content_hash": "sha256:ef82f22fdc34f5257d9fa2de14917cacc4d1e1e65106c07b2505d4c6b6e12678"
+    },
+    {
+      "id": "standalone.orchestration-policy",
+      "kind": "standalone",
+      "summary": "Admission, WIP, ordering, retry, effort, model selection, and /goal rules for direct Claude or Codex use.",
+      "scope": {
+        "unit": "session",
+        "produces": "guidance",
+        "excludes": [
+          "resolver-controlled execution"
+        ]
+      },
+      "entrypoint": "standalone/orchestration.md",
+      "resources": [
+        {
+          "type": "doc",
+          "path": "standalone/orchestration.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "standalone": {
+        "role": "control-plane",
+        "reason": "Control Plane policy; a resolver's own scheduler owns these decisions in controlled execution."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:1fd57bb484a5fe8df07aeb8072b4b3c8ed87d866890c742082e566d00d028f0a"
     }
   ]
 }

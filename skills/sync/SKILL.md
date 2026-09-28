@@ -40,6 +40,8 @@ Read `sync-config.json` to get:
 - `projects` — object mapping project name to `{ path, layers, adapters? }` (`layers` is ordered; later layers override earlier ones)
 - `default_adapters` — host outputs to render when a project does not override them
 - `common_skills`, `common_agents`, `common_rules` — common files for all projects
+- `standalone_rules` — destination rule name → source under `standalone/`; copied into `.claude/rules/` so
+  standalone `/dev`, `/dev-all`, and `/orchestrate` keep their orchestration policy in synced projects
 - `layer_types` — per-layer definitions for agents, rules, skills, templates
 - `hook_policy` — `manual` means inspect and merge hooks rather than overwriting them
 
@@ -117,6 +119,9 @@ cp agents/{agent}.md {project}/.claude/agents/{agent}.md
 # Rules
 mkdir -p {project}/.claude/rules/
 cp rules/{rule} {project}/.claude/rules/{rule}
+
+# Standalone rules (destination name → source path from standalone_rules)
+cp {source} {project}/.claude/rules/{destination}
 
 # Hooks (merge, don't overwrite — project may have custom hooks)
 # Show diff and ask user how to merge

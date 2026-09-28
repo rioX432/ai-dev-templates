@@ -27,11 +27,27 @@ if python3 "$VALIDATE" resolve standalone.dev-all >/dev/null 2>&1; then
   exit 1
 fi
 
+# Buddy-facing context: everything a resolver can load must be free of standalone
+# Control Plane policy. The same markers must match the standalone policy itself, so
+# a passing scan cannot come from markers that match nothing.
+CONTROL_PLANE_MARKERS='/goal\b|\bWIP\b|dev-all|\borchestrate\b|model selection|effort level|worktree|lowest-numbered|consecutive failures|turn cap|maxTurns|\(model:|ready label|standalone/orchestration|standalone-orchestration'
+python3 "$VALIDATE" context >"$TMP/context.md"
+if grep -n -i -E "$CONTROL_PLANE_MARKERS" "$TMP/context.md"; then
+  echo "Buddy-facing capability context contains standalone orchestration policy" >&2
+  exit 1
+fi
+for marker in '/goal' 'WIP limit' 'Model Selection' 'Effort Level' 'worktree' 'consecutive failures' 'turn cap' 'ready label'; do
+  grep -q -F "$marker" "$ROOT/standalone/orchestration.md" || {
+    echo "marker '$marker' no longer appears in the standalone policy; update the scan" >&2
+    exit 1
+  }
+done
+
 # Each mutation runs against a private copy so hash and coverage checks see real files.
 fresh_copy() {
   rm -rf "$TMP/src"
   mkdir -p "$TMP/src"
-  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/.claude-plugin" "$TMP/src/"
+  cp -R "$ROOT/capabilities" "$ROOT/skills" "$ROOT/agents" "$ROOT/rules" "$ROOT/standalone" "$ROOT/.claude-plugin" "$TMP/src/"
 }
 
 expect_failure() {
@@ -122,5 +138,13 @@ path = Path(sys.argv[1])
 path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
 PY
 test "$(python3 "$VALIDATE" --root "$TMP/src")" = "capability manifest: OK"
+
+fresh_copy
+mutate '(.capabilities[] | select(.id == "engineering.workflow")).resources += [{"type": "doc", "path": "standalone/orchestration.md"}]'
+expect_failure "exported entry loading standalone policy" "is standalone policy and cannot be exported"
+
+fresh_copy
+printf '# stray\n' >"$TMP/src/standalone/unlisted.md"
+expect_failure "unclassified standalone policy" "standalone/unlisted.md is not classified"
 
 echo "Capability manifest tests passed"

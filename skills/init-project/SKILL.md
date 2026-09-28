@@ -88,7 +88,7 @@ portable Agent Skills fields and adding host-capability guidance. Do not raw-cop
 ### 6. Copy Common Agents and Rules
 
 Copy every entry listed in `skills/sync/sync-config.json` under `common_agents` and
-`common_rules` — that file is the single source of truth, shared with `/sync` and with
+`common_rules`, and each `standalone_rules` source to `.claude/rules/{destination}` — that file is the single source of truth, shared with `/sync` and with
 `.github/workflows/sync-to-projects.yml`. Do not hardcode the list here; read it.
 
 ```

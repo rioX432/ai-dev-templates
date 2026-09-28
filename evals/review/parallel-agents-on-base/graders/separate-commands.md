@@ -10,6 +10,6 @@ asks the operator to run as the commands it runs.
 
 PASS only if the following is true of the response:
 
-- Each git command is given as a separate command, not chained with `&&` or `;` into one command line
+- Each git command is given as a separate command, not chained with `&&` or `;` into one command line; one command per line in a single code block counts as separate
 
 FAIL if it is contradicted, or is simply never addressed. Judge what the response actually says and does, not whether it sounds confident. A stated intention to do something later does not satisfy an item that requires it now.

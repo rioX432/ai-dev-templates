@@ -330,13 +330,14 @@ tools), plugin at the commit that added the `Counts` line to `/review`, 2 runs p
 | `review-uncommitted-change-reviewed` | 1.00 | 0.00 |
 | `review-dedupe-findings` | 1.00 | 0.00 |
 | `review-critical-blocks-commit` | 1.00 | 0.62 |
-| `review-parallel-agents-on-base` | 0.60 | 0.50 |
+| `review-parallel-agents-on-base` | 0.40 | 0.10 |
 
 Before the scaffolds, all four scored 0 in the with-arm because the subject found no repository. Before the
-`Counts` line, `critical-blocks-commit` failed `counts-as-text` in both arms (0.75 / 0.75). The session's git
-context reports `develop` as the main branch, so the `parallel-agents-on-base` subject writes `develop` into the
-diff commands before its PR-base lookup returns; the judge split on that across runs (0.80 with-arm on an earlier
-run), and one with-arm run here chained its lookup with `||` and left out `git diff HEAD`.
+`Counts` line, `critical-blocks-commit` failed `counts-as-text` in both arms (0.75 / 0.75). The
+`parallel-agents-on-base` scaffold leaves `origin/HEAD` unset: with it set, the session's git context named the real
+default branch (`develop`) and handed both arms the answer. Now the context names `main`, which does not exist, and
+the with-arm still wrote `main` into its diff commands after asking for the PR base — a Step 0 miss the case now
+catches.
 
 ## Verification Profiles
 

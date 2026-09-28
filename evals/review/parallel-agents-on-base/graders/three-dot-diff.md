@@ -10,6 +10,6 @@ asks the operator to run as the commands it runs.
 
 PASS only if the following is true of the response:
 
-- `git diff {base}...HEAD` (three-dot) is used for committed changes so unrelated base commits are excluded
+- `git diff {base}...HEAD` (three-dot) is used for committed changes so unrelated base commits are excluded; a placeholder for the base the lookup returns (such as `{base}` or `<base>`) counts, a hard-coded `main` does not
 
 FAIL if it is contradicted, or is simply never addressed. Judge what the response actually says and does, not whether it sounds confident. A stated intention to do something later does not satisfy an item that requires it now.

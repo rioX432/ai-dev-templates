@@ -12,7 +12,5 @@ PASS only if every item below is true of the response:
 - Uncommitted changes are included via `git diff HEAD` and `git status`, so work not yet committed is reviewed
 - Git commands are run as separate calls, not chained with `&&`
 - The review profile is chosen from the change's semantic signals, not from the 40-file count, before any reviewer is launched
-- When the profile calls for more than one independent reviewer, they are launched in the same turn so they run concurrently; when it calls for none, none is launched
-- Project-specific reviewers in `.claude/agents/` are launched only when the change touches the surface they declare
 
 FAIL if any item is contradicted, or is simply never addressed. Judge what the response actually says and does, not whether it sounds confident. A stated intention to do something later does not satisfy an item that requires it now.

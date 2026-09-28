@@ -26,7 +26,8 @@ highest one any signal maps to. Diff size never lowers a profile.
 | `public-contract`, `data-migration`, `security`, `auth`, `concurrency`, `build-or-ci-config`, `dependency-major`, `cross-repository`, `irreversible` | `highRisk` |
 
 `crosses-module-boundary` means the change alters how two modules interact, not merely that two files in different
-modules were edited. A change you cannot classify with confidence takes the higher candidate profile.
+modules were edited. A change to what users see or can interact with — layout, sizing, styles, visible copy — is
+`behavior-change`, not `config-text` or `refactor-no-behavior-change`. A change you cannot classify with confidence takes the higher candidate profile.
 
 ## 2. Tiers
 
@@ -59,7 +60,8 @@ A tier counts as delegated only when all of these hold:
 
 1. Repository CI runs a check that covers that tier on the pull request's head commit.
 2. That check is required for merge (`gh pr checks --required` lists it), so nothing merges before it passes.
-3. The verification record names the check and marks the tier `source: ci`.
+3. The verification record names the check, marks the tier `source: ci`, and sets `required: true` only after
+   seeing the check in `gh pr checks --required`.
 4. The tier is satisfied only once that check reports success on the same head SHA as the rest of the evidence.
    Pending, skipped, or absent CI satisfies nothing; do not call missing CI a pass.
 
@@ -95,6 +97,7 @@ Report verification as a structured record so a caller can check it without trus
       "command": "{exact command, or the CI check name}",
       "surface": "{files, module, or repository}",
       "source": "local | ci",
+      "required": "{ci only: true when gh pr checks --required lists this check}",
       "exit_code": 0,
       "success_signal": "{exact observed signal}",
       "output_excerpt": "{bounded excerpt containing the signal}",
@@ -107,5 +110,6 @@ Report verification as a structured record so a caller can check it without trus
 
 When the provider's `scripts/verification-gate.py` is available, `python3 scripts/verification-gate.py check
 <record.json>` applies sections 1–4 deterministically: it rejects a missing required tier, a failed or stale check,
-an unjustified local `full` run under `fast`, and a delegation outside the allowed tiers. Without it, apply the same
+an unjustified local `full` run under `fast`, a CI check not marked required, and a delegation outside the allowed
+tiers. Without it, apply the same
 rules by hand.

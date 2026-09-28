@@ -29,7 +29,7 @@ check() { # name profile signals-json checks-json [done_when-json]
     '{profile: $p, signals: $s, head_sha: $h, done_when: $d, checks: ($c | map(. + {head_sha: (.head_sha // $h), exit_code: (.exit_code // 0), success_signal: (.success_signal // "ok")}))}' \
     >"$TMP/$1.json"
   local status=0
-  python3 "$GATE" check "$TMP/$1.json" >"$TMP/$1.out" || status=$?
+  python3 "$GATE" check "$TMP/$1.json" >"$TMP/$1.out" 2>"$TMP/$1.err" || status=$?
   # 1 is a policy failure; anything else is a broken record and must not satisfy an expected "fail"
   case $status in 0) echo pass ;; 1) echo fail ;; *) echo "error:$status" ;; esac
 }
@@ -39,11 +39,12 @@ FOCUSED='{"tier":"focused","command":"pnpm test -- test/auth.test.ts","source":"
 MODULE='{"tier":"affected-module","command":"pnpm --filter auth test","source":"local"}'
 INTEGRATION='{"tier":"integration","command":"pnpm test:contract","source":"local"}'
 FULL_LOCAL='{"tier":"full","command":"pnpm test","source":"local"}'
-FULL_CI='{"tier":"full","command":"ci / test","source":"ci"}'
+FULL_CI='{"tier":"full","command":"ci / test","source":"ci","required":true}'
+FULL_CI_OPTIONAL='{"tier":"full","command":"ci / nightly","source":"ci"}'
 FULL_STALE='{"tier":"full","command":"pnpm test","source":"local","head_sha":"2222222222222222222222222222222222222222"}'
 MODULE_FAILED='{"tier":"affected-module","command":"pnpm --filter auth test","source":"local","exit_code":1}'
 FULL_REQUIRED='{"tier":"full","command":"pnpm test","source":"local","required_by":"repository"}'
-INTEGRATION_CI='{"tier":"integration","command":"ci / contract","source":"ci"}'
+INTEGRATION_CI='{"tier":"integration","command":"ci / contract","source":"ci","required":true}'
 
 # highRisk cannot pass on focused checks alone
 test "$(check hr-focused highRisk '["auth"]' "[$FOCUSED]")" = fail
@@ -51,6 +52,9 @@ test "$(field hr-focused .missing)" = '["affected-module","integration","full"]'
 # highRisk passes with every tier, full delegated to a required CI check on the same head
 test "$(check hr-full highRisk '["auth"]' "[$FOCUSED,$MODULE,$INTEGRATION,$FULL_CI]")" = pass
 test "$(field hr-full .delegated_command_count)" = 1
+# an informational CI job that merge does not require satisfies nothing
+test "$(check hr-optional-ci highRisk '["auth"]' "[$FOCUSED,$MODULE,$INTEGRATION,$FULL_CI_OPTIONAL]")" = fail
+test "$(field hr-optional-ci .missing)" = '["full"]'
 # a lower declared profile is raised to the one the signals require
 test "$(check understated fast '["auth"]' "[$FOCUSED]")" = fail
 test "$(field understated .profile)" = '"highRisk"'
@@ -66,6 +70,8 @@ test "$(field fast-focused .local_command_count)" = 1
 # fast does not run an unrelated full suite locally unless something requires it
 test "$(check fast-full fast '["docs-only"]' "[$FOCUSED,$FULL_LOCAL]")" = fail
 test "$(check fast-full-required fast '["docs-only"]' "[$FOCUSED,$FULL_REQUIRED]")" = pass
+# required_by names who required the extra run; anything else is a broken record
+test "$(check fast-full-bogus fast '["docs-only"]' '[{"tier":"focused","command":"pnpm test","source":"local","required_by":"felt like it"}]')" = error:2
 # CI cannot stand in for a tier the profile does not let it delegate
 test "$(check fast-ci fast '["docs-only"]' '[{"tier":"focused","command":"ci / unit","source":"ci"}]')" = fail
 

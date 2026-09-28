@@ -42,6 +42,7 @@ REQUIRED = {
 # standard adds integration only when the change alters how modules interact
 CONDITIONAL = {"standard": {"crosses-module-boundary": "integration"}}
 DELEGABLE = {"fast": [], "standard": ["integration"], "highRisk": ["full"]}
+REQUIRED_BY = {"repository", "issue"}
 
 
 class RecordError(ValueError):
@@ -96,6 +97,10 @@ def check(record: dict[str, Any]) -> dict[str, Any]:
         if item.get("source") == "ci" and item["tier"] not in DELEGABLE[profile]:
             # CI may run more than the profile needs; it just cannot stand in for a local tier.
             continue
+        if item.get("source") == "ci" and item.get("required") is not True:
+            # An informational CI job can be skipped or ignored at merge, so it proves nothing.
+            violations.append(f"{where}: CI check is not marked required for merge; it cannot satisfy a delegated tier")
+            continue
         passing.append(item)
 
     required = required_tiers(profile, signals)
@@ -107,6 +112,9 @@ def check(record: dict[str, Any]) -> dict[str, Any]:
             missing.append(f"done_when: {command}")
 
     local = [c for c in checks if c.get("source", "local") == "local"]
+    for item in checks:
+        if "required_by" in item and item["required_by"] not in REQUIRED_BY:
+            raise RecordError(f"required_by must be one of {sorted(REQUIRED_BY)}, got {item['required_by']!r}")
     for item in local:
         if profile == "fast" and item.get("tier") == "full" and not item.get("required_by"):
             violations.append("fast profile ran the full suite locally without a repository or issue requirement")

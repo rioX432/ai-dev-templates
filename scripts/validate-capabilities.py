@@ -26,7 +26,7 @@ STANDALONE_FOLDER = "standalone"
 IGNORED_NAMES = {".DS_Store", "__pycache__"}
 # Each resource type lives in exactly one top-level folder, so a wrapper cannot be
 # re-exported by declaring its SKILL.md as some other resource type.
-TYPE_FOLDERS = {"skill": "skills", "agent": "agents", "rule": "rules"}
+TYPE_FOLDERS = {"skill": "skills", "agent": "agents", "rule": "rules", "script": "scripts"}
 WORKSPACE_LEVELS = {"none": 0, "read": 1, "write": 2}
 
 

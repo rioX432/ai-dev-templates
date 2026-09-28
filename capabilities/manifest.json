@@ -146,6 +146,42 @@
       "content_hash": "sha256:16e666589ffb41e7a46a75b019edd558ca6b3caacc07062e05daf71892346ebb"
     },
     {
+      "id": "coding.verify",
+      "kind": "capability",
+      "summary": "Select fast, standard, or highRisk verification from semantic risk and blast radius, and check the evidence record.",
+      "scope": {
+        "unit": "change",
+        "produces": "guidance",
+        "excludes": [
+          "choosing the verification budget",
+          "replacing required CI checks"
+        ]
+      },
+      "entrypoint": "rules/verification.md",
+      "resources": [
+        {
+          "type": "rule",
+          "path": "rules/verification.md"
+        },
+        {
+          "type": "script",
+          "path": "scripts/verification-gate.py"
+        }
+      ],
+      "authority": {
+        "workspace": "read",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "none"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:28de91dd839e7526f580d7caf90893c9149ce9a0c11612ed5e27e724e9543dee"
+    },
+    {
       "id": "coding.cleanup",
       "kind": "capability",
       "summary": "Remove AI narration and change-history prose from the current change's comments without touching logic.",
@@ -721,7 +757,7 @@
         "codex": "native"
       },
       "contract_version": 1,
-      "content_hash": "sha256:fdeea743454ecb75040f05bb05c20127cd5d82dd500283ec16f114c9a6b77f21"
+      "content_hash": "sha256:19df873b822d5c4cb0768b5be5c4d1d5e66fec795ea21346a457809b84855586"
     },
     {
       "id": "standalone.dev",
@@ -764,6 +800,7 @@
         "coding.decompose",
         "coding.implement",
         "coding.cleanup",
+        "coding.verify",
         "coding.review",
         "github.issue",
         "github.pr",
@@ -774,7 +811,7 @@
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:28bf54b0dfd5e9d43e349ffd8eb04d26b8a18dafcd3aa3d0e42332f27969fe71"
+      "content_hash": "sha256:44da2f8bff0cc43b0a1dd081bcca89c5d56dd7191912467be6e98e4895723032"
     },
     {
       "id": "standalone.dev-investigate",
@@ -861,7 +898,7 @@
         "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:fab33cb9786afff2977f980ec054fb3c9148a20bf36100eca57cca6228bab9ea"
+      "content_hash": "sha256:e1e33d175ff9f5ed40620860be786e1b2da90dc176cb49138e8a8346519badea"
     },
     {
       "id": "standalone.orchestrate",
@@ -942,7 +979,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:75e3295e53bf42ff81057411dd8fe249cd2c584cf1750de369f122b2aeaf7504"
+      "content_hash": "sha256:c3acc002d65c97f7ff1411af50318d22d74905fa46b4d9c6d0a32f5fe00bd713"
     },
     {
       "id": "standalone.orchestration-policy",

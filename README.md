@@ -297,7 +297,9 @@ general-purpose agent briefed with that file.
 - `--allow-tools Bash` cannot run on a machine whose Docker credential store (`~/.docker`) contains a symlink —
   Docker Desktop's own `cli-plugins` links are enough to block it. Cases here stay within read-only tools plus
   `Write`/`Edit`; where the behaviour is running a command (`dev/fresh-test-output`), the criteria accept naming
-  the exact command as the blocking next action and still fail stale or invented output.
+  the exact command as the blocking next action and still fail stale or invented output. The `review` cases seed
+  the repository and give the git output in the prompt; `review/parallel-agents-on-base` grades the Step 0
+  commands the subject asks the operator to run.
 - Record the subject model, the judge model, the date, and the plugin commit next to any score you keep; runs from
   different models are not comparable.
 
@@ -321,6 +323,25 @@ score per arm.
 On `05031f6` (before these cases were reworked) all six scored 0 in the with-arm. In the `dev-investigate` run that
 scored 0.75, the report left out the skill's required `Changes Needed` and `Decision Points` sections — a skill
 miss the `regex` graders are there to catch.
+
+2026-09-28, same CLI, subject and judge, `--scaffold` without `--allow-tools` (the `review` cases use read-only
+tools), plugin at the commit that added this table; 3 runs per arm for `parallel-agents-on-base`, 2 for the rest.
+
+| Case | With | Without |
+|---|---|---|
+| `review-uncommitted-change-reviewed` | 1.00 | 0.33 |
+| `review-dedupe-findings` | 1.00 | 0.00 |
+| `review-critical-blocks-commit` | 1.00 | 0.75 |
+| `review-parallel-agents-on-base` | 1.00 | 0.67 |
+
+Before the scaffolds, all four scored 0 in the with-arm because the subject found no repository. Two gaps in
+`/review` surfaced once they ran, and are fixed: the report did not print severity counts (`critical-blocks-commit`
+failed `counts-as-text` in both arms), and Step 0 did not say that the session's "Main branch" is not a resolved
+base. That line comes from `origin/HEAD` and falls back to `main` when it is unset, so `parallel-agents-on-base`
+leaves `origin/HEAD` unset in a repository with no `main`, and pastes the PR-base lookup (`develop`) into the
+prompt; a single reply cannot show the second round trip a shell-less Step 0 needs. Its graders, like
+`uncommitted-change-reviewed`'s, are one item each and phrased as concrete PASS/FAIL conditions: phrased as
+outcomes ("so the work is reviewed"), the judge failed responses that met them.
 
 ## Verification Profiles
 

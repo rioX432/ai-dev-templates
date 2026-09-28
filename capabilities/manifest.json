@@ -179,7 +179,7 @@
         "codex": "native"
       },
       "contract_version": 1,
-      "content_hash": "sha256:3b4629b1e088efde0104d51c2029c3cbe4696ef7bbe34f4c749a5918204b25b1"
+      "content_hash": "sha256:13fc41a1106536127caa0a74d5558efef2af2803bca00972dee6544bf0dcd007"
     },
     {
       "id": "coding.cleanup",
@@ -851,7 +851,7 @@
         "reason": "Fixes phase order and confirmations for one session; a resolver composes the capabilities itself."
       },
       "contract_version": 1,
-      "content_hash": "sha256:903ce08a5dd86fd061e59115eabb13e153cf8d92bfa9394072f1f5d628004519"
+      "content_hash": "sha256:e5f49bb5b556fcf46604295fe4760fe66b3c63fb4db6a1b90a2a511132b6a59f"
     },
     {
       "id": "standalone.dev-investigate",

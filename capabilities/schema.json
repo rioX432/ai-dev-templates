@@ -139,6 +139,17 @@
             "reason": {"type": "string", "minLength": 10}
           }
         },
+        "policy": {
+          "description": "Required for, and only for, kind 'policy'. A policy is never part of a resolver's default context; a repository opts in.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["optional", "activation", "compatibility_default"],
+          "properties": {
+            "optional": {"const": true},
+            "activation": {"type": "string", "minLength": 10},
+            "compatibility_default": {"type": "string", "minLength": 10}
+          }
+        },
         "contract_version": {"type": "integer", "minimum": 1},
         "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }

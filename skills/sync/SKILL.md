@@ -42,6 +42,8 @@ Read `sync-config.json` to get:
 - `common_skills`, `common_agents`, `common_rules` — common files for all projects
 - `standalone_rules` — destination rule name → source under `standalone/`; copied into `.claude/rules/` so
   standalone `/dev`, `/dev-all`, and `/orchestrate` keep their orchestration policy in synced projects
+- `policy_rules` — destination rule name → source under `policies/`; copied into `.claude/rules/` so synced
+  projects keep the product policy as their compatibility default (a project opts out with `## Product policy: none`)
 - `layer_types` — per-layer definitions for agents, rules, skills, templates
 - `hook_policy` — `manual` means inspect and merge hooks rather than overwriting them
 
@@ -120,7 +122,7 @@ cp agents/{agent}.md {project}/.claude/agents/{agent}.md
 mkdir -p {project}/.claude/rules/
 cp rules/{rule} {project}/.claude/rules/{rule}
 
-# Standalone rules (destination name → source path from standalone_rules)
+# Standalone and policy rules (destination name → source path from standalone_rules and policy_rules)
 cp {source} {project}/.claude/rules/{destination}
 
 # Hooks (merge, don't overwrite — project may have custom hooks)

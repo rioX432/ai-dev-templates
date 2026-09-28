@@ -48,12 +48,15 @@ Each issue gets its own branch, PR, and merge cycle:
 
 ---
 
-## Step 0: Core Value Check (GATE)
+## Step 0: Product Policy Check
 
-1. Read the project's `CLAUDE.md` and look for `## Core Values` section
-2. **If missing**: Warn the user that Core Values are undefined. Ask if they want to:
+Resolve whether [the product policy](../../policies/core-value-filter.md#when-this-policy-applies) applies. If it does
+not, skip this step and every Core Value / Won't Do item below.
+
+1. Read the repository's `## Core Values`
+2. **If the policy applies but Core Values are missing**: warn the user and ask whether to:
    - Define Core Values now (recommended)
-   - Proceed without the filter (not recommended — risk of feature bloat)
+   - Proceed without the filter (feature issues lose the one-step test)
 3. If user chooses to proceed without, log a warning in the final report
 
 ---
@@ -76,7 +79,7 @@ IDs or for issues to be labeled. Never fall back to every open issue — an unla
 
 - **Skip issues labeled `won't`** — these are explicitly decided not to implement
 - **Skip issues labeled `epic`** — work their children instead
-- **Skip issues listed in CLAUDE.md `## Won't Do`** — cross-reference issue titles
+- **Skip issues listed in `## Won't Do`** (where the product policy applies) — cross-reference issue titles
 
 ---
 
@@ -111,7 +114,7 @@ Present:
 2. Dependencies detected
 3. Skipped issues (with reasons — including `won't` label and Won't Do matches)
 4. Estimated scope per issue
-5. **Core Value alignment per issue** (if Core Values are defined)
+5. **Core Value alignment per issue** (where the product policy applies)
 
 Ask user to confirm before proceeding.
 

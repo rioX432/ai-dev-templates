@@ -411,7 +411,7 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:390acccf42b0988309e9b21fc8ccb05552c94aa1d8e603111acb14b3c23f16a5"
+      "content_hash": "sha256:ba89ec31e3736884bbff53d0de7a9eb8fd82e2fe3a1b1159e376ff2d6d052d2f"
     },
     {
       "id": "github.pr",
@@ -651,7 +651,8 @@
         "codex": "rendered"
       },
       "composes": [
-        "github.issue"
+        "github.issue",
+        "policy.core-value-filter"
       ],
       "contract_version": 1,
       "content_hash": "sha256:c537d3913fc3a27268ae2dbb3222689c9cb9a31edb5693a238cb8b48aa12a531"
@@ -689,10 +690,11 @@
         "codex": "rendered"
       },
       "composes": [
-        "github.issue"
+        "github.issue",
+        "policy.core-value-filter"
       ],
       "contract_version": 1,
-      "content_hash": "sha256:1389745230ad61ab29f5298fe88d3ff0baffb708f86b884fb4cb961da8a736f5"
+      "content_hash": "sha256:6e23bd737ed988fc47180b86705c6151ffab7cb28f2a1b365d9f9d3c86ec97e7"
     },
     {
       "id": "project.bootstrap",
@@ -725,12 +727,12 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:6ce450d256ac9ea3aef1b529766bc58e00902ff1fd82f15128e6750e82342492"
+      "content_hash": "sha256:4ab8be0e0b6a493d2811d4aa9ebda5111616b95efca6f537318d7d794212466c"
     },
     {
       "id": "engineering.workflow",
       "kind": "capability",
-      "summary": "Issue-driven engineering flow for one admitted issue: sizing, design check, implementation, verification, review, PR.",
+      "summary": "Issue-driven engineering flow for one admitted issue: sizing, design check, implementation, verification, review, PR. Needs no product policy.",
       "scope": {
         "unit": "issue",
         "produces": "guidance",
@@ -757,7 +759,45 @@
         "codex": "native"
       },
       "contract_version": 1,
-      "content_hash": "sha256:19df873b822d5c4cb0768b5be5c4d1d5e66fec795ea21346a457809b84855586"
+      "content_hash": "sha256:415cd1afa126c40c47ed169c825ba53993ea56fa7ed7a2d15f9f3f6102311c77"
+    },
+    {
+      "id": "policy.core-value-filter",
+      "kind": "policy",
+      "summary": "Optional product policy: Core Value one-step test, Won't Do registry, weekly review of research issues, and 2-axis feature prioritization.",
+      "scope": {
+        "unit": "project",
+        "produces": "guidance",
+        "excludes": [
+          "engineering gates",
+          "bug and security fixes",
+          "choosing which issue runs next"
+        ]
+      },
+      "entrypoint": "policies/core-value-filter.md",
+      "resources": [
+        {
+          "type": "policy",
+          "path": "policies/core-value-filter.md"
+        }
+      ],
+      "authority": {
+        "workspace": "none",
+        "external": [],
+        "spawns_agents": false,
+        "user_interaction": "optional"
+      },
+      "hosts": {
+        "claude": "native",
+        "codex": "native"
+      },
+      "policy": {
+        "optional": true,
+        "activation": "Repository guidance `## Product policy`: `none`, `core-value-filter`, or a repository path that replaces it.",
+        "compatibility_default": "Without that section it applies when the repository has `## Core Values` or `## Won't Do`, or a synced `.claude/rules/core-value-filter.md`."
+      },
+      "contract_version": 1,
+      "content_hash": "sha256:8d1601eb1406fd412edbdf200d540932e3b967e70ccaec689680073ace27f351"
     },
     {
       "id": "standalone.dev",
@@ -891,14 +931,15 @@
       },
       "composes": [
         "standalone.dev",
-        "standalone.orchestration-policy"
+        "standalone.orchestration-policy",
+        "policy.core-value-filter"
       ],
       "standalone": {
         "role": "control-plane",
         "reason": "Owns admission, ordering, concurrency, retry, and merge; a Control Plane such as Buddy owns these in controlled execution."
       },
       "contract_version": 1,
-      "content_hash": "sha256:e1e33d175ff9f5ed40620860be786e1b2da90dc176cb49138e8a8346519badea"
+      "content_hash": "sha256:0faa1d57b7a257ca0eb0a4f362ef96055b0bc63dec975412bd1db43cf93e45c3"
     },
     {
       "id": "standalone.orchestrate",
@@ -979,7 +1020,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:c3acc002d65c97f7ff1411af50318d22d74905fa46b4d9c6d0a32f5fe00bd713"
+      "content_hash": "sha256:6964690b13b2df7b1d77e3d7f2da2357cf44c4892e1a1a3f4a30117cbdc1a8f0"
     },
     {
       "id": "standalone.orchestration-policy",

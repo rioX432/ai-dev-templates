@@ -100,6 +100,9 @@
   "standalone_rules": {
     "standalone-orchestration.md": "standalone/orchestration.md"
   },
+  "policy_rules": {
+    "core-value-filter.md": "policies/core-value-filter.md"
+  },
   "layer_types": {
     "kmp": {
       "agents": [

@@ -6,12 +6,18 @@ Keep this file focused on repository-wide facts and boundaries that materially c
 
 <!-- 1-2 lines describing the project -->
 
-## Core values
+## Product policy
+
+<!-- `core-value-filter` applies ai-dev's optional product policy to the two sections below; `none` turns it off; -->
+<!-- a repository path replaces it with your own policy. -->
+core-value-filter
+
+## Core Values
 
 <!-- Max 3. A feature proposal must directly strengthen one. -->
 <!-- 1. {What is the one thing this product should do exceptionally well?} -->
 
-## Won't do
+## Won't Do
 
 <!-- Record rejected features with the reason so audits do not repeatedly propose them. -->
 

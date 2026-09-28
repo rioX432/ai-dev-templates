@@ -4,7 +4,7 @@ Portable AI-development workflows with a Claude Code plugin adapter and rendered
 The repository covers autonomous issue resolution, context-isolated investigation, independent design review, UI/UX
 auditing, and structured review gates.
 
-**Core philosophy: depth over breadth.** Every feature proposal is filtered through project-defined Core Values and a one-step distance test. The system is designed to prevent feature bloat by enforcing "what NOT to build" as a first-class concept.
+**Core philosophy: depth over breadth.** Repositories that opt into the optional [product policy](#product-policy-optional) filter every feature proposal through project-defined Core Values and a one-step distance test, enforcing "what NOT to build" as a first-class concept. The engineering capabilities work without it.
 
 **v3.0 highlights:**
 - **Codex integration**: Technical design verification via the Codex CLI (`codex exec`, read-only) in `/dev`, `/dig`, `/decompose` (optional, with fallback)
@@ -43,7 +43,7 @@ This plugin is **language-agnostic but not tracker-agnostic**. It assumes:
 |---|---|
 | **GitHub** is the issue tracker and code host, with the `gh` CLI authenticated | `issue`, `pr`, `dev`, `dev-all`, `audit`, `ux-audit`, `competitive-audit`, `monitor` |
 | The project documents build/test/lint commands in `AGENTS.md` or `CLAUDE.md` | every skill that runs a quality gate; repository guidance wins over auto-detection |
-| The project defines **Core Values** in its repository guidance | `competitive-audit` (hard gate), `issue`, `rules/ai-ops.md` |
+| The project defines **Core Values** in its repository guidance — only where the [product policy](#product-policy-optional) applies | `competitive-audit` (hard gate), `issue`, `dev-all` |
 
 `/dev` can *read* a Linear issue (`XXX-1234`) through the Linear MCP, but every write path —
 issue creation, branch, PR, merge — is GitHub. A project on Jira or GitLab can use the
@@ -108,8 +108,12 @@ Standalone entries are listed so every skill, agent, and rule is classified, not
 `standalone.dev` (E2E composition wrapper), `standalone.dev-investigate` (forked-context adapter),
 `standalone.dev-all` and `standalone.orchestrate` (Control Plane loops), `standalone.orchestration-policy`
 (standalone operating policy), and `standalone.sync` (distribution). `python3 scripts/validate-capabilities.py
-context` prints the exact text a resolver can load; `./scripts/test-capability-manifest.sh` fails if it contains
-queue, WIP, model-routing, retry, worktree, or `/goal` policy.
+context` prints the exact text a resolver loads by default; `./scripts/test-capability-manifest.sh` fails if it
+contains queue, WIP, model-routing, retry, worktree, or `/goal` policy.
+
+Policy entries (`kind: policy`, currently `policy.core-value-filter`) are exported and resolvable but carry
+`policy.optional: true` and are left out of the default context. Add them with `context --policy <id>` only for a
+repository that opted in.
 
 `python3 scripts/validate-capabilities.py` exits 0 and prints `capability manifest: OK` when the manifest matches
 its schema, every resource exists, every hash is current, and no standalone wrapper is exported. After editing a
@@ -206,7 +210,7 @@ flags, secret access through file and shell tools, valid JSONL, and non-persiste
 
 Eval cases live at the plugin root in `evals/<skill>/<case>/`, in the layout `claude plugin eval` runs: a
 `prompt.md` (frontmatter plus the prompt) and one or more `graders/*.md`. They cannot live under `skills/` — the
-runner rejects an eval dir inside a loaded component directory. Coverage: 53 cases across 20 skills, including the
+runner rejects an eval dir inside a loaded component directory. Coverage: 55 cases across 20 skills, including the
 high-risk boundaries in `init-project`, `monitor`, `pr`, `sync`, `think`, `update-docs`, and `ux-audit`. Each case
 targets a failure mode its skill exists to prevent rather than matching presentation wording.
 
@@ -278,9 +282,30 @@ the full suite locally fails, stale or failed evidence satisfies nothing, and th
 
 AI-driven development can accelerate implementation speed, but without guardrails it leads to scope explosion. This plugin addresses this structurally:
 
+### Product Policy (optional)
+
+The Core Value filter, Won't Do registry, weekly review of research issues, and 2-axis feature prioritization live
+in [policies/core-value-filter.md](policies/core-value-filter.md) (`policy.core-value-filter`). They decide which
+features are worth building; they never gate bug or security fixes, investigation, implementation, verification, or
+review. A repository without Core Values uses every engineering capability unblocked.
+
+Which policy applies is resolved in this order, and the first match wins:
+
+| Precedence | Source | Effect |
+|---|---|---|
+| 1 | Repository guidance `## Product policy` (`AGENTS.md` / `CLAUDE.md`) | `none` turns it off; `core-value-filter` turns it on; a repository path replaces it with the repository's own policy |
+| 2 | Compatibility default | With no such section, the policy applies when the repository has `## Core Values` or `## Won't Do`, or a synced `.claude/rules/core-value-filter.md` |
+| 3 | Provider default | Otherwise the repository is generic-only and nothing asks for Core Values |
+
+Repository truth outranks the provider: the repository's Core Values, Won't Do entries, and any replacement policy
+are the content; the provider file only supplies the procedure. `/sync` copies the policy to
+`.claude/rules/core-value-filter.md` (`policy_rules` in `sync-config.json`), so a project synced before this split
+keeps enforcing it without editing anything; it opts out with `## Product policy` set to `none`. A Control Plane
+adds `policy.core-value-filter` to a task's context only for a repository where the policy applies.
+
 ### Core Value Filter
 
-Each project defines **Core Values** (max 3) in its `CLAUDE.md`. Every feature proposal must pass the **one-step distance test**:
+Each project defines **Core Values** (max 3) in its `AGENTS.md` / `CLAUDE.md`. Every feature proposal must pass the **one-step distance test**:
 
 > "Does this DIRECTLY strengthen a Core Value, without intermediate reasoning?"
 
@@ -289,7 +314,7 @@ Each project defines **Core Values** (max 3) in its `CLAUDE.md`. Every feature p
 
 ### Won't Do Registry
 
-Features explicitly decided NOT to build are recorded in `CLAUDE.md → ## Won't Do` with reasoning. This prevents:
+Features explicitly decided NOT to build are recorded under `## Won't Do` in repository guidance with reasoning. This prevents:
 - Future audits from re-proposing the same rejected ideas
 - Research documents from becoming feature requests without review
 
@@ -315,8 +340,8 @@ completion condition.
 ### Structural Constraints
 
 - **competitive-audit**: Max 3 issues per run, Core Value gate at Phase 0, user pain points as primary input (not competitor feature lists)
-- **ai-ops rule**: Research → Issue → Weekly review → Implementation (no shortcut from research to code)
-- **dev-all**: Admits only explicit issue IDs or the ready label; auto-skips `won't`-labeled issues and Won't Do list entries
+- **ai-ops rule**: Research → Issue → Implementation (no shortcut from research to code); the product policy adds a weekly review
+- **dev-all**: Admits only explicit issue IDs or the ready label; auto-skips `won't`-labeled issues, and Won't Do list entries where the product policy applies
 
 ## Harness Engineering Design
 
@@ -337,7 +362,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again
 - **Peelable design**: Each component is independent — remove what the model no longer needs
 - **Language-agnostic**: Skills resolve project-specific commands from repository guidance rather than hardcoding one build tool
-- **Depth over breadth**: Core Value filter + Won't Do registry prevent feature factory anti-pattern
+- **Depth over breadth**: the optional Core Value filter + Won't Do registry prevent the feature factory anti-pattern
 
 ### Architecture
 
@@ -477,6 +502,8 @@ ai-dev-templates/
 │   └── restore-context.sh
 ├── standalone/
 │   └── orchestration.md           ← admission, WIP, retry, effort, model selection, /goal (standalone only)
+├── policies/
+│   └── core-value-filter.md       ← optional product policy: Core Values, Won't Do, weekly review, 2-axis
 ├── layers/                        ← composable: projects reference a list of layers
 │   ├── README.md                  ← layer model, drift policy, how to add a layer
 │   ├── kmp/                       ← KMP/CMP mobile (formerly "mobile")
@@ -498,7 +525,7 @@ ai-dev-templates/
     ├── behavior.md              ← evidence, trust boundaries, independent review
     ├── coding-conventions.md
     ├── verification.md          ← risk-based verification profiles
-    └── ai-ops.md                ← issue-driven engineering flow + Core Value guard
+    └── ai-ops.md                ← issue-driven engineering flow (no product policy required)
 ```
 
 ## License

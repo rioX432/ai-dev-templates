@@ -1020,7 +1020,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:83a0b1ef845b6328812f6cde6382cc90bd0778a382e794c0570e446ddeb39498"
+      "content_hash": "sha256:d1046005837540bcd53a6f8f8274d653cd1fef2973b13501345e264282c785ed"
     },
     {
       "id": "standalone.orchestration-policy",

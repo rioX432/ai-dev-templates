@@ -118,7 +118,8 @@ if grep -q 'cp skills/init-project/templates/AGENTS.md.template target/AGENTS.md
   echo "workflow still copies a placeholder AGENTS.md" >&2
   exit 1
 fi
-grep -q 'Warn if project guidance is missing' "$ROOT/.github/workflows/sync-to-projects.yml"
+grep -q 'Validate project guidance without modifying it' "$ROOT/.github/workflows/sync-to-projects.yml"
+grep -Fq "elif grep -Fq '{PROJECT_NAME}' target/AGENTS.md" "$ROOT/.github/workflows/sync-to-projects.yml"
 if grep -q 'git add .claude/ .agents/ .github/ AGENTS.md' "$ROOT/.github/workflows/sync-to-projects.yml"; then
   echo "workflow still stages an absent AGENTS.md without a guard" >&2
   exit 1

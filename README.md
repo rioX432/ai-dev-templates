@@ -455,7 +455,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **One sync registry**: `sync-config.json` is schema-validated and generates the CI matrix; manual and automated
   paths consume the same skills, agents, rules, layers, projects, and adapter selection
 - **Host adapters**: Claude keeps `.claude/skills` and host integrations; Codex receives portable-frontmatter skills
-  under `.agents/skills` plus a seed-only `AGENTS.md`. Claude hooks and named agents are not presented as Codex enforcement
+  under `.agents/skills`; `AGENTS.md` remains repository-owned and is never automatically seeded. Claude hooks and named agents are not presented as Codex enforcement
 - **Independent design check**: Codex can challenge technical designs in a read-only pass; the primary agent owns
   the decision and verifies it against the repository
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again

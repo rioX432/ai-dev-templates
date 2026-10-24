@@ -41,7 +41,7 @@ Parse `$ARGUMENTS` (case-insensitive):
 - `hygiene [path]` → source-of-truth and stale-document audit, scoped to one project/app when supplied; run Procedure H below instead of the other phases
 - `all` or empty → run all phases
 
-If `$ARGUMENTS` is empty, default to `all` without asking. Ask only for an unrecognized or genuinely ambiguous scope:
+If `$ARGUMENTS` is empty or unrecognized, use `AskUserQuestion`:
 
 **Q: Which documents should be updated?**
 - All documents (architecture + changelog + readme + oss) *(Recommended)*
@@ -68,7 +68,8 @@ The job is to stop an AI agent from mistaking historical instructions for the cu
    Distinguish implemented behavior from future intent; never infer product decisions from a closed Issue alone.
 4. **Make a conflict table**: `claim | source (path/line) | conflicting evidence | status | safe resolution`.
    Prioritize contradictions that would change functionality, permissions, privacy, pricing, or the user flow.
-5. **Apply only safe, bounded documentation changes once authorized**: repair incorrect facts; add explicit
+5. **Present the conflict table and edit plan first.** If the user requested an audit only, ask for approval before
+   writing. If the user's current request explicitly authorizes a bounded cleanup, do not ask again.\n   **Apply only safe, bounded documentation changes once authorized**: repair incorrect facts; add explicit
    `SUPERSEDED — DO NOT USE FOR IMPLEMENTATION` headers linking to the replacement; update entrypoint pointers;
    remove obsolete links to unapproved specs. Preserve the former text through Git history. For unresolved product
    questions, label `needs decision` and leave executable instructions unchanged. Never automatically delete

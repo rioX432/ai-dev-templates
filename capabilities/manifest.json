@@ -376,7 +376,7 @@
         "codex": "native"
       },
       "contract_version": 1,
-      "content_hash": "sha256:be4731893dfd60525fc594c925d0512a58adb6fdc757d967f077161bdbe0b5f7"
+      "content_hash": "sha256:0d4307c7285f14ef648107cbebe340d22337ac77b9bb5df95329d9354dfbee0e"
     },
     {
       "id": "github.issue",
@@ -556,7 +556,7 @@
         "codex": "rendered"
       },
       "contract_version": 1,
-      "content_hash": "sha256:00eec0b6b44b16faa6b4863914069155ddc3b751caddba3d6d6690e51a2406d8"
+      "content_hash": "sha256:fe30b01bf399a439c7fe2222108fad633ca980797e08a9fba1259867804e7a21"
     },
     {
       "id": "research.think",
@@ -1020,7 +1020,7 @@
         "reason": "Distributes provider content by copying it; it is packaging, not an engineering capability."
       },
       "contract_version": 1,
-      "content_hash": "sha256:5d6e5f94a3a306fe4f28564322bbfc3173e997ea2c3678d972bfcd33d6f5afd2"
+      "content_hash": "sha256:d1046005837540bcd53a6f8f8274d653cd1fef2973b13501345e264282c785ed"
     },
     {
       "id": "standalone.orchestration-policy",

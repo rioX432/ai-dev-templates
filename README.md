@@ -153,7 +153,7 @@ A project consumes this library in one of two modes, set per project as `consump
 |---|---|---|---|
 | Common skills, agents, rules, standalone and policy rules | provider-generic | copied into `.claude/` (and `.agents/skills`) | not copied; a resolver loads them from the capability manifest by reference |
 | Layer conventions and reviewers (`layers/`) | provider, per project type | copied | copied (no resolver exports them yet) |
-| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never overwritten (`AGENTS.md` is seeded only when missing) | same |
+| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never created or overwritten (missing or placeholder guidance is warned; repair in a project-owned PR or create via `/init-project`) | same |
 
 `python3 scripts/sync-config.py plan --project <name>` prints the files a project receives, with their owner, and
 the capability IDs a `provider` project resolves. The workflow and `/sync` copy provider-generic content only in
@@ -193,7 +193,7 @@ Rollback: remove `consumption` (or set it to `sync`). The next sync copies the g
 | `/ai-dev:competitive-audit [focus]` | Core Value-filtered competitive analysis: user pain points → max 3 issues + Won't Do recording |
 | `/ai-dev:ux-audit [target]` | Evidence-based user-flow audit: current-run capture, UX, WCAG 2.2, responsive/platform checks, verification gaps → optional GitHub Issues |
 | `/ai-dev:monitor` | KPI monitoring: crash rates, reviews, metrics → priorities (PoC) |
-| `/ai-dev:update-docs [scope]` | Documentation audit & update (architecture, changelog, readme, oss) |
+| `/ai-dev:update-docs [scope]` | Documentation updates and `hygiene [path]` audit: reconcile stale/superseded instructions and source-of-truth pointers |
 | `/ai-dev:sync` | Sync common files to target projects |
 | `/ai-dev:think <topic> [repo]` | Zero-base deep research: structured investigation → synthesis → proposal with counter-arguments |
 | `/ai-dev:init-project {path}` | Initialize a project with templates (includes Core Values + Won't Do sections) |
@@ -455,7 +455,7 @@ This plugin follows [harness engineering](https://mitchellh.com/writing/my-ai-ad
 - **One sync registry**: `sync-config.json` is schema-validated and generates the CI matrix; manual and automated
   paths consume the same skills, agents, rules, layers, projects, and adapter selection
 - **Host adapters**: Claude keeps `.claude/skills` and host integrations; Codex receives portable-frontmatter skills
-  under `.agents/skills` plus a seed-only `AGENTS.md`. Claude hooks and named agents are not presented as Codex enforcement
+  under `.agents/skills`; `AGENTS.md` remains repository-owned and is never automatically seeded. Claude hooks and named agents are not presented as Codex enforcement
 - **Independent design check**: Codex can challenge technical designs in a read-only pass; the primary agent owns
   the decision and verifies it against the repository
 - **Failure-driven improvement**: `PostToolUseFailure` hook logs patterns → human promotes to `rules/*.md` → never happens again

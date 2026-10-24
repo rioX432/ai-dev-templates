@@ -153,7 +153,7 @@ A project consumes this library in one of two modes, set per project as `consump
 |---|---|---|---|
 | Common skills, agents, rules, standalone and policy rules | provider-generic | copied into `.claude/` (and `.agents/skills`) | not copied; a resolver loads them from the capability manifest by reference |
 | Layer conventions and reviewers (`layers/`) | provider, per project type | copied | copied (no resolver exports them yet) |
-| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never created or overwritten (missing file is warned; create via `/init-project`) | same |
+| `AGENTS.md` facts, project reviewers, exceptions, `## Product policy` | repository-local | never created or overwritten (missing or placeholder guidance is warned; repair in a project-owned PR or create via `/init-project`) | same |
 
 `python3 scripts/sync-config.py plan --project <name>` prints the files a project receives, with their owner, and
 the capability IDs a `provider` project resolves. The workflow and `/sync` copy provider-generic content only in

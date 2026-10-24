@@ -83,10 +83,12 @@ jobs:
             echo "$skill" >> /tmp/synced-skills
           done
 
-      - name: Warn if project guidance is missing
+      - name: Validate project guidance without modifying it
         run: |
           if [ ! -e target/AGENTS.md ]; then
             echo "::warning::AGENTS.md is missing for ${{ matrix.repo }}. Sync will not copy the unfilled template; create populated project-specific guidance with /init-project."
+          elif grep -Fq '{PROJECT_NAME}' target/AGENTS.md; then
+            echo "::warning::AGENTS.md in ${{ matrix.repo }} still contains a placeholder. Repair it in a project-owned PR before relying on Codex guidance."
           fi
 
       - name: Sync common agents
@@ -265,6 +267,8 @@ jobs:
           GUIDANCE_NOTE=""
           if [ ! -e AGENTS.md ]; then
             GUIDANCE_NOTE="WARNING: AGENTS.md is missing. No placeholder was seeded; the project owner must create filled-in guidance via /init-project."
+          elif grep -Fq '{PROJECT_NAME}' AGENTS.md; then
+            GUIDANCE_NOTE="WARNING: AGENTS.md still contains an unfilled placeholder. The target project must replace it in a separate reviewed PR."
           fi
           gh pr create \
             --title "Sync ai-dev-template updates ($LABEL)" \

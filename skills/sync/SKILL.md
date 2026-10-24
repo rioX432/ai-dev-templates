@@ -212,5 +212,6 @@ Next: review changes in each project and commit.
 - **Automated workflow templates are seed-only**: CI adds a missing template but never overwrites an existing one;
   updates to an existing project workflow require an explicit reviewed merge
 - **AGENTS.md is repository-owned**: never create or replace it during automatic or manual sync. If missing,
-  emit an actionable warning and leave it absent; use `/init-project` only when a maintainer intentionally creates
+  emit an actionable warning and leave it absent. Also warn when existing guidance contains a raw
+  `{PROJECT_NAME}` placeholder; a reviewed target-project PR must repair it. Use `/init-project` only when a maintainer intentionally creates
   populated project guidance. Never copy the unfilled `AGENTS.md.template` into a consumer.

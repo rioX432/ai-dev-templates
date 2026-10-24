@@ -111,4 +111,17 @@ if not any(generic.search(step) for step in steps):
     sys.exit("workflow no longer reads the provider-generic lists; update this check")
 PY
 
+# A sync must not seed the unfilled AGENTS.md template; missing project guidance is
+# a warning, not a made-up active contract. This also catches a bad unconditional
+# git add that would break the sync PR when AGENTS.md is absent.
+if grep -q 'cp skills/init-project/templates/AGENTS.md.template target/AGENTS.md' "$ROOT/.github/workflows/sync-to-projects.yml"; then
+  echo "workflow still copies a placeholder AGENTS.md" >&2
+  exit 1
+fi
+grep -q 'Warn if project guidance is missing' "$ROOT/.github/workflows/sync-to-projects.yml"
+if grep -q 'git add .claude/ .agents/ .github/ AGENTS.md' "$ROOT/.github/workflows/sync-to-projects.yml"; then
+  echo "workflow still stages an absent AGENTS.md without a guard" >&2
+  exit 1
+fi
+
 echo "Sync config tests passed"
